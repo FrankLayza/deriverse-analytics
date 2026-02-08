@@ -2,11 +2,15 @@
   "name": "deriverse-analytics",
   "version": "1.0.0",
   "description": "Comprehensive trading analytics dashboard for Deriverse",
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "fetch-history": "tsx fetchTradeHistory.ts",
+    "test-integration": "tsx lib/test-integration.ts",
+    "test-deriverse": "tsx test-deriverse.ts"
   },
   "dependencies": {
     "@deriverse/kit": "^1.0.39",
@@ -14,12 +18,15 @@
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/web3.js": "^1.98.4",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.94.0",
     "@tailwindcss/postcss": "^4.1.18",
+    "bs58": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.0.6",
+    "dotenv": "^17.2.3",
     "lucide-react": "^0.298.0",
     "next": "16.1.6",
     "react": "19.2.4",
@@ -38,6 +45,7 @@
     "@types/react-dom": "18.2.18",
     "autoprefixer": "10.4.16",
     "postcss": "8.4.32",
+    "tsx": "^4.21.0",
     "typescript": "5.3.3"
   }
 }

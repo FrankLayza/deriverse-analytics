@@ -4,7 +4,7 @@ import React from 'react';
 import { Wallet, LogOut } from 'lucide-react';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {useWalletModal} from '@solana/wallet-adapter-react-ui';
-import { useAccountBalance } from '@/hooks/useDeriverse';
+// import { useAccountBalance } from '@/hooks/useDeriverse';
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 // Helper function to shorten wallet address
@@ -14,7 +14,7 @@ function shortenAddress(address: string, chars = 4): string {
 
 export default function Home() {
   const {connected, publicKey, disconnect} = useWallet();
-  const balance = useAccountBalance(publicKey?.toString() || null);
+  // const balance = useAccountBalance(publicKey?.toString() || null);
   const {setVisible} = useWalletModal();
 
   const handleConnectWallet = () => {
@@ -44,7 +44,7 @@ export default function Home() {
                 <Wallet size={20} />
                 <span>{shortenAddress(publicKey.toString())}</span>
               </button>
-              <span className="text-zinc-400 text-sm">Balance: {balance} SOL</span>
+              <span className="text-zinc-400 text-sm">Balance: 0 SOL</span>
             </div>
             <button
               onClick={handleDisconnect}
