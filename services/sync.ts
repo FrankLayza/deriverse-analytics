@@ -3,8 +3,8 @@
  * Syncs Deriverse trades to Supabase database
  */
 
-import { supabase, type TradeInsert } from '@/lib/supabase/client';
-import { fetchDeriverseTrades, calculatePnL, type DecodedTrade } from '@/lib/deriverse/fetcher';
+import { supabase, type TradeInsert } from '@/utils/supabase';
+import { fetchDeriverseTrades, calculatePnL, type DecodedTrade } from '@/lib/fetcher';
 
 export interface SyncResult {
   success: boolean;

@@ -1,0 +1,18 @@
+/** @type {import('next').NextConfig} */
+const path = require("path");
+
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  // Add webpack alias so `@/...` resolves to project root
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@": path.resolve(__dirname),
+    };
+    return config;
+  },
+};
+
+module.exports = nextConfig;
