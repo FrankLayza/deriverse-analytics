@@ -1,73 +1,54 @@
-import { NextResponse } from 'next/server'
-import { LogType } from '@deriverse/kit'
-import { getDeriverse } from '@/lib/deriverse-engine'
-import { supabase } from '@/utils/supabase'
-
-export const runtime = 'nodejs'
+import { NextResponse } from "next/server";
+import { rpc, deriverseEngine } from "@/lib/deriverse";
+import { supabase } from "@/utils/supabase";
+import { mapEventToSchema } from "@/lib/deriverse-mapper";
 
 export async function POST(req: Request) {
   try {
-    const { signature, wallet } = await req.json()
+    const { signature, wallet } = await req.json();
 
-    if (!signature || !wallet) {
-      return NextResponse.json({ error: 'Missing signature or wallet' }, { status: 400 })
+    // 1. Fetch Transaction
+    const txResponse = await (rpc as any).getTransaction(signature, {
+      maxSupportedTransactionVersion: 0
+    }).send();
+
+    const tx = txResponse?.value || txResponse;
+    if (!tx?.meta?.logMessages) return NextResponse.json({ error: "No logs" }, { status: 404 });
+
+    const logMessages = tx.meta.logMessages;
+    let decodedEvents: any[] = [];
+
+    // 2. Robust Decoding (Individual fallback strategy)
+    try {
+      // Try bulk first
+      const bulk = await (deriverseEngine as any).logsDecode(logMessages);
+      if (bulk?.length) decodedEvents = bulk;
+    } catch (e) {
+      // Fallback: This is what worked in your local test!
+      for (const log of logMessages) {
+        if (log.includes("Program data:")) {
+          try {
+            const single = await (deriverseEngine as any).logsDecode([log]);
+            if (single?.length) decodedEvents.push(...single);
+          } catch (err) { /* ignore non-event logs */ }
+        }
+      }
     }
 
-    const { engine, rpc } = await getDeriverse()
+    // 3. Filter and Map
+    const fills = decodedEvents.filter(e => e.tag === 11 || e.tag === 19);
+    if (fills.length === 0) return NextResponse.json({ ok: true, message: "No fills" });
 
-    console.log('[Ingest] Fetching tx:', signature)
+    const blockTime = tx.blockTime ? new Date(tx.blockTime * 1000) : new Date();
+    const rows = fills.map(event => mapEventToSchema(event, signature, wallet, blockTime));
 
-    const tx = await rpc.getTransaction(signature, {
-      maxSupportedTransactionVersion: 0,
-      encoding: 'jsonParsed',
-    }).send()
+    // 4. Save to DB
+    const { error } = await supabase.from("trades").upsert(rows);
+    if (error) throw error;
 
-    if (!tx?.meta?.logMessages) {
-      return NextResponse.json({ error: 'No logs found in transaction' }, { status: 400 })
-    }
+    return NextResponse.json({ ok: true, count: rows.length });
 
-    const decoded = engine.logsDecode(tx.meta.logMessages)
-    console.log('[Ingest] Decoded events:', decoded)
-
-    const fills = decoded.filter(
-      (e: any) =>
-        e.tag === LogType.spotFillOrder ||
-        e.tag === LogType.perpFillOrder
-    )
-
-    console.log('[Ingest] Trade fills:', fills)
-
-    if (fills.length === 0) {
-      return NextResponse.json({ ok: true, message: 'No fills found' })
-    }
-
-    const rows = fills.map((f: any) => ({
-      wallet,
-      instr_id: f.instrId ?? null,
-      market_type: f.tag === LogType.spotFillOrder ? 'spot' : 'perp',
-      side: f.side === 0 ? 'buy' : 'sell',
-      price: f.price,
-      qty: f.qty ?? f.perps,
-      value: f.crncy,
-      tx_signature: signature
-    }))
-
-    const { error } = await supabase.from('trades').insert(rows)
-
-    if (error) {
-      console.error('[Supabase Insert Error]', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    console.log('[Ingest] Stored trades:', rows)
-
-    return NextResponse.json({
-      ok: true,
-      inserted: rows.length,
-      trades: rows
-    })
   } catch (err: any) {
-    console.error('[Ingest Error]', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
