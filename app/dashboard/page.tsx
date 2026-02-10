@@ -9,7 +9,7 @@ export default async function AnalyticsDashboard({
 }: {
   searchParams: { wallet?: string };
 }) {
-  const wallet = searchParams.wallet || "FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q";
+  const wallet = await searchParams.wallet || "FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q";
 
   // 1. Fetch Aggregates for Charts
   const { data: aggregates } = await supabase
