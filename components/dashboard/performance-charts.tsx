@@ -78,11 +78,11 @@ export function PerformanceCharts({ pnlSeries, drawdown, risk }: PerformanceChar
           config={{
             pnl: {
               label: 'PnL',
-              color: 'hsl(var(--primary))',
+              color: 'hsl(132, 63%, 47%)',
             },
             drawdown: {
               label: 'Drawdown',
-              color: 'hsl(var(--secondary))',
+              color: 'hsl(0, 83%, 53%)',
             },
           }}
           className="h-64 w-full"

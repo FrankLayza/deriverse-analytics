@@ -99,9 +99,9 @@ export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
               {core.winRate.toFixed(0)}%
             </div>
           </div>
-          <div>
+          <div className='flex justify-between flex-col gap-2'>
             <div className="text-xs text-muted-foreground">Total Trades</div>
-            <div className="font-mono text-xl font-bold text-foreground">{core.totalTrades}</div>
+            <div className="font-mono text-4xl font-bold text-foreground">{core.totalTrades}</div>
           </div>
         </div>
       </div>
