@@ -52,7 +52,7 @@ export function TradeJournal({ trades }: TradeJournalProps) {
                   Side
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Type
+                 Order Type
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Size

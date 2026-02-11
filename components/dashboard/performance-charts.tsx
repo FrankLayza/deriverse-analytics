@@ -85,7 +85,7 @@ export function PerformanceCharts({ pnlSeries, drawdown, risk }: PerformanceChar
               color: 'hsl(0, 83%, 53%)',
             },
           }}
-          className="h-64 w-full"
+          className="h-64 w-full mt-8"
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
