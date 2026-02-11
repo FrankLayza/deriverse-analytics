@@ -1,14 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { LogOut, Wallet as WalletIcon, ArrowRight } from 'lucide-react'
+import { LogOut, Wallet as WalletIcon, ArrowRight, RefreshCw } from 'lucide-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Button } from '@/components/ui/button'
 
-export function TopNav() {
-  const {setVisible} = useWalletModal()
-  const {connected, publicKey, disconnect} = useWallet()
+export function TopNav({ onRefresh, isSyncing }) {
+  const { setVisible } = useWalletModal()
+  const { connected, publicKey, disconnect } = useWallet()
 
   return (
     <div className="border-b border-border bg-card">
@@ -25,10 +24,29 @@ export function TopNav() {
         <div className="flex items-center gap-2 sm:gap-3">
           {connected && publicKey ? (
             <>
+              {/* Sync Button: Triggers the onRefresh logic passed from page.tsx */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isSyncing}
+                className="gap-2 border-border bg-muted/30 hover:bg-muted/50 text-foreground"
+              >
+                <RefreshCw 
+                  className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} 
+                />
+                <span className="hidden sm:inline">
+                  {isSyncing ? 'Syncing...' : 'Sync Logs'}
+                </span>
+              </Button>
+
               <div className="hidden items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 hover:bg-muted/50 transition-colors sm:flex">
                 <div className="h-2 w-2 shrink-0 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
-                <span className="font-mono text-xs text-foreground sm:text-sm">{publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}</span>
+                <span className="font-mono text-xs text-foreground sm:text-sm">
+                  {publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}
+                </span>
               </div>
+              
               <button
                 onClick={() => disconnect()}
                 className="cursor-pointer rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"

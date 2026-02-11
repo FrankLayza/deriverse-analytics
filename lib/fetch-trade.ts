@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { rpc, deriverseEngine } from './deriverse';
 
-async function fetchMyTrades() {
-  const wallet = "FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q";
+export async function fetchMyTrades(wallet: string) {
+  // const wallet = "FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q";
   const programId = process.env.PROGRAM_ID || "Drvrseg8AQLP8B96DBGmHRjFGviFNYTkHueY9g3k27Gu";
   
   console.log("🔍 Fetching transaction signatures for wallet:", wallet);
@@ -263,11 +263,12 @@ async function fetchMyTrades() {
       console.log("\n💡 Tip: Trade events might be in a different log format.");
       console.log("   Check the sample logs above to see the actual format.");
     }
-    
+    return trades
   } catch (err: any) {
     console.error("❌ Error fetching trades:", err.message);
     console.error(err.stack);
+    return []
   }
 }
 
-fetchMyTrades();
+// fetchMyTrades("FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q");

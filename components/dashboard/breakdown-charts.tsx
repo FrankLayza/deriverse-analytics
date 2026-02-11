@@ -2,111 +2,138 @@
 
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts'
 import { ChartContainer } from '@/components/ui/chart'
+import { FeeComposition, SessionPerformance } from '@/lib/calculations'
 
-const feeData = [
-  { name: 'Spot Fees', value: 650, color: 'hsl(132 63% 47%)' },
-  { name: 'Perp Fees', value: 595, color: 'hsl(190 85% 49%)' },
-]
+interface BreakdownChartsProps {
+  fees: FeeComposition;
+  sessions: SessionPerformance;
+}
 
-const performanceByTime = [
-  { name: 'Asia', value: 4250, color: 'hsl(132 63% 47%)' },
-  { name: 'London', value: 3840, color: 'hsl(190 85% 49%)' },
-  { name: 'NY', value: 4757, color: 'hsl(280 65% 60%)' },
-]
+export function BreakdownCharts({ fees, sessions }: BreakdownChartsProps) {
+  // Transform the real fee data into the format Recharts expects
+  const dynamicFeeData = [
+    { name: 'Spot Fees', value: fees.spotFees, color: 'hsl(var(--primary))' },
+    { name: 'Perp Fees', value: fees.perpFees, color: 'hsl(var(--secondary))' },
+  ].filter(item => item.value > 0); // Don't render slices for 0 value
 
-export function BreakdownCharts() {
+  // Transform the real session data. Instead of hardcoded cities, we show Win/Loss sessions
+  const dynamicSessionData = [
+    { name: 'Profitable Days', value: sessions.profitableSessions, color: 'hsl(var(--primary))' },
+    { name: 'Losing Days', value: sessions.losingSessionsCount, color: 'hsl(var(--secondary))' },
+  ].filter(item => item.value > 0);
+
   return (
-    <div className="grid grid-cols-2 gap-4 px-6 py-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 py-6">
       {/* Fee Composition */}
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
-          Fee Composition
+          Fee Composition Breakdown
         </h3>
-        <ChartContainer config={{}} className="h-56 w-full">
-          <PieChart>
-            <Pie
-              data={feeData}
-              cx="50%"
-              cy="50%"
-              innerRadius={50}
-              outerRadius={80}
-              paddingAngle={2}
-              dataKey="value"
-            >
-              {feeData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload?.length) {
-                  return (
-                    <div className="rounded border border-border bg-card p-2 shadow-lg">
-                      <div className="font-mono text-xs text-foreground">
-                        {payload[0].name}: ${payload[0].value}
-                      </div>
-                    </div>
-                  )
-                }
-                return null
-              }}
-            />
-            <Legend
-              wrapperStyle={{
-                paddingTop: '16px',
-              }}
-              formatter={(value) => (
-                <span className="text-xs text-muted-foreground">{value}</span>
-              )}
-            />
-          </PieChart>
-        </ChartContainer>
+        
+        {dynamicFeeData.length > 0 ? (
+          <ChartContainer config={{}} className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={dynamicFeeData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {dynamicFeeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload?.length) {
+                      return (
+                        <div className="rounded border border-border bg-card p-2 shadow-lg">
+                          <div className="font-mono text-xs flex justify-between gap-4">
+                            <span className="text-muted-foreground">{payload[0].name}:</span>
+                            <span className="text-foreground font-bold">
+                              ${Number(payload[0].value).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ paddingTop: '16px' }}
+                  formatter={(value) => (
+                    <span className="text-xs text-muted-foreground">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        ) : (
+          <div className="h-56 flex items-center justify-center text-xs text-muted-foreground">
+            No fee data available
+          </div>
+        )}
       </div>
 
-      {/* Time of Day Performance */}
+      {/* Session Performance */}
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
-          Session Performance
+          Daily Session Profitability
         </h3>
-        <ChartContainer config={{}} className="h-56 w-full">
-          <PieChart>
-            <Pie
-              data={performanceByTime}
-              cx="50%"
-              cy="50%"
-              innerRadius={50}
-              outerRadius={80}
-              paddingAngle={2}
-              dataKey="value"
-            >
-              {performanceByTime.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload?.length) {
-                  return (
-                    <div className="rounded border border-border bg-card p-2 shadow-lg">
-                      <div className="font-mono text-xs text-foreground">
-                        {payload[0].name}: ${payload[0].value.toLocaleString()}
-                      </div>
-                    </div>
-                  )
-                }
-                return null
-              }}
-            />
-            <Legend
-              wrapperStyle={{
-                paddingTop: '16px',
-              }}
-              formatter={(value) => (
-                <span className="text-xs text-muted-foreground">{value}</span>
-              )}
-            />
-          </PieChart>
-        </ChartContainer>
+        
+        {dynamicSessionData.length > 0 ? (
+          <ChartContainer config={{}} className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={dynamicSessionData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {dynamicSessionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload?.length) {
+                      return (
+                        <div className="rounded border border-border bg-card p-2 shadow-lg">
+                          <div className="font-mono text-xs flex justify-between gap-4">
+                            <span className="text-muted-foreground">{payload[0].name}:</span>
+                            <span className="text-foreground font-bold">
+                              {payload[0].value} Days
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ paddingTop: '16px' }}
+                  formatter={(value) => (
+                    <span className="text-xs text-muted-foreground">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        ) : (
+          <div className="h-56 flex items-center justify-center text-xs text-muted-foreground">
+            No session data available
+          </div>
+        )}
       </div>
     </div>
   )

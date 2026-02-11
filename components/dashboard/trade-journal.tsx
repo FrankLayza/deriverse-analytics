@@ -1,88 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit2 } from 'lucide-react'
+import { Edit2, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { TradeJournalEntry } from '@/lib/calculations'
 
-interface Trade {
-  id: string
-  date: string
-  symbol: string
-  side: 'Buy' | 'Sell'
-  orderType: 'Market' | 'Limit'
-  size: number
-  entryPrice: number
-  exitPrice: number
-  pnl: number
-  fees: number
+interface TradeJournalProps {
+  trades: TradeJournalEntry[];
 }
 
-const trades: Trade[] = [
-  {
-    id: '1',
-    date: '2024-02-10 14:32',
-    symbol: 'SOL/USDC',
-    side: 'Buy',
-    orderType: 'Market',
-    size: 10.5,
-    entryPrice: 98.45,
-    exitPrice: 104.20,
-    pnl: 601.88,
-    fees: 12.50,
-  },
-  {
-    id: '2',
-    date: '2024-02-09 09:15',
-    symbol: 'BTC/USDC',
-    side: 'Sell',
-    orderType: 'Limit',
-    size: 0.15,
-    entryPrice: 42850.00,
-    exitPrice: 42650.00,
-    pnl: 300.00,
-    fees: 25.00,
-  },
-  {
-    id: '3',
-    date: '2024-02-08 16:44',
-    symbol: 'SOL/USDC',
-    side: 'Buy',
-    orderType: 'Limit',
-    size: 25.0,
-    entryPrice: 95.30,
-    exitPrice: 92.50,
-    pnl: -700.00,
-    fees: 35.20,
-  },
-  {
-    id: '4',
-    date: '2024-02-07 11:22',
-    symbol: 'ETH/USDC',
-    side: 'Buy',
-    orderType: 'Market',
-    size: 2.5,
-    entryPrice: 2340.50,
-    exitPrice: 2450.75,
-    pnl: 275.63,
-    fees: 18.75,
-  },
-  {
-    id: '5',
-    date: '2024-02-06 13:08',
-    symbol: 'BTC/USDC',
-    side: 'Buy',
-    orderType: 'Market',
-    size: 0.08,
-    entryPrice: 42500.00,
-    exitPrice: 43200.00,
-    pnl: 560.00,
-    fees: 20.00,
-  },
-]
-
-export function TradeJournal() {
+export function TradeJournal({ trades }: TradeJournalProps) {
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 10 // Increased from 5 to 10 for better data density
 
   const totalPages = Math.ceil(trades.length / itemsPerPage)
   const paginatedTrades = trades.slice(
@@ -90,23 +19,34 @@ export function TradeJournal() {
     currentPage * itemsPerPage,
   )
 
+  // Edge case: If there are no trades, don't break the pagination math
+  if (trades.length === 0) {
+    return (
+      <div className="px-6 py-6">
+        <div className="rounded-lg border border-border bg-card p-4 text-center text-muted-foreground">
+          No trades found for this period.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-6 py-6">
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-4 overflow-hidden">
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
-          Trade Journal
+          Recent Trade Executions
         </h3>
 
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border">
+              <tr className="border-b border-border bg-muted/20">
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Date/Time
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Symbol
+                  Asset
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Side
@@ -118,10 +58,7 @@ export function TradeJournal() {
                   Size
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Entry Price
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Exit Price
+                  Price
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   PnL
@@ -130,7 +67,7 @@ export function TradeJournal() {
                   Fees
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Action
+                  Notes
                 </th>
               </tr>
             </thead>
@@ -138,42 +75,46 @@ export function TradeJournal() {
               {paginatedTrades.map((trade) => (
                 <tr
                   key={trade.id}
-                  className="border-b border-border hover:bg-accent/50 transition-colors"
+                  className="border-b border-border hover:bg-muted/30 transition-colors"
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-foreground">{trade.date}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    {trade.formattedDate}
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs font-bold text-foreground">
                     {trade.symbol}
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-block rounded px-2 py-1 text-xs font-bold ${
-                        trade.side === 'Buy'
-                          ? 'bg-primary/20 text-primary'
-                          : 'bg-secondary/20 text-secondary'
+                      className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-bold ${
+                        trade.side === 'BUY'
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-destructive/10 text-destructive'
                       }`}
                     >
+                      {trade.side === 'BUY' ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
                       {trade.side}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-foreground">{trade.orderType}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-right text-foreground">
-                    {trade.size.toFixed(2)}
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {trade.order_type || 'MARKET'}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-right text-foreground">
-                    ${trade.entryPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {trade.formattedQuantity}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-right text-foreground">
-                    ${trade.exitPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {trade.formattedPrice}
                   </td>
                   <td
                     className={`px-4 py-3 font-mono text-xs font-bold text-right ${
-                      trade.pnl >= 0 ? 'text-primary' : 'text-secondary'
+                      trade.pnLClass === 'profit' 
+                        ? 'text-primary' 
+                        : trade.pnLClass === 'loss' ? 'text-destructive' : 'text-muted-foreground'
                     }`}
                   >
-                    {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                    {trade.formattedPnL}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-right text-foreground">
-                    ${trade.fees.toFixed(2)}
+                  <td className="px-4 py-3 font-mono text-xs text-right text-muted-foreground">
+                    {trade.formattedFees}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Button
@@ -191,7 +132,7 @@ export function TradeJournal() {
         </div>
 
         {/* Pagination */}
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border pt-4">
           <div className="text-xs text-muted-foreground">
             Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
             {Math.min(currentPage * itemsPerPage, trades.length)} of {trades.length} trades
@@ -206,21 +147,35 @@ export function TradeJournal() {
             >
               Previous
             </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={page === currentPage ? 'default' : 'outline'}
-                size="sm"
-                className={`h-8 w-8 p-0 ${
-                  page === currentPage
-                    ? 'bg-primary text-primary-foreground'
-                    : 'border-border text-foreground hover:bg-muted hover:text-foreground'
-                }`}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </Button>
-            ))}
+            
+            {/* Generate page numbers dynamically (max 5 visible to avoid overflow) */}
+            <div className="hidden sm:flex gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                // Logic to keep current page centered if many pages exist
+                let pageNum = i + 1;
+                if (totalPages > 5 && currentPage > 3) {
+                  pageNum = currentPage - 3 + i;
+                  if (pageNum > totalPages) pageNum = totalPages - (4 - i);
+                }
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    className={`h-8 w-8 p-0 ${
+                      pageNum === currentPage
+                        ? 'bg-primary text-primary-foreground'
+                        : 'border-border text-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+
             <Button
               variant="outline"
               size="sm"
