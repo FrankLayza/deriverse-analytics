@@ -25,13 +25,13 @@ export interface Trade {
   user_id: string;
   wallet_address: string;
   signature: string;
-  trade_type: 'SPOT' | 'PERP';
+  market_type: 'SPOT' | 'PERP';
   side: 'BUY' | 'SELL';
   symbol: string;
   price: string;
   quantity: string;
   fees: string;
-  pnl: string | null;
+  realized_pnl: string | null;
   order_type: 'MARKET' | 'LIMIT' | null;
   instrument_id: number | null;
   client_id: number | null;

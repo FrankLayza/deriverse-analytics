@@ -57,14 +57,14 @@ export function calculateCoreMetrics(trades: Trade[]): CoreMetrics {
     };
   }
 
-  const totalPnL = trades.reduce((sum, t) => sum + toNumber(t.pnl), 0);
+  const totalPnL = trades.reduce((sum, t) => sum + toNumber(t.realized_pnl), 0);
   const totalVolume = trades.reduce((sum, t) => 
     sum + (toNumber(t.price) * toNumber(t.quantity)), 0
   );
   const totalFees = trades.reduce((sum, t) => sum + toNumber(t.fees), 0);
   
-  const winningTrades = trades.filter(t => toNumber(t.pnl) > 0).length;
-  const losingTrades = trades.filter(t => toNumber(t.pnl) < 0).length;
+  const winningTrades = trades.filter(t => toNumber(t.realized_pnl) > 0).length;
+  const losingTrades = trades.filter(t => toNumber(t.realized_pnl) < 0).length;
   const winRate = trades.length > 0 
     ? (winningTrades / trades.length) * 100 
     : 0;
@@ -165,15 +165,15 @@ export function calculateRiskMetrics(trades: Trade[]): RiskMetrics {
     };
   }
 
-  const pnls = trades.map(t => toNumber(t.pnl));
-  const wins = trades.filter(t => toNumber(t.pnl) > 0);
-  const losses = trades.filter(t => toNumber(t.pnl) < 0);
+  const pnls = trades.map(t => toNumber(t.realized_pnl));
+  const wins = trades.filter(t => toNumber(t.realized_pnl) > 0);
+  const losses = trades.filter(t => toNumber(t.realized_pnl) < 0);
 
   const largestGain = pnls.length > 0 ? Math.max(...pnls) : 0;
   const largestLoss = pnls.length > 0 ? Math.min(...pnls) : 0;
 
-  const totalWins = wins.reduce((sum, t) => sum + toNumber(t.pnl), 0);
-  const totalLosses = Math.abs(losses.reduce((sum, t) => sum + toNumber(t.pnl), 0));
+  const totalWins = wins.reduce((sum, t) => sum + toNumber(t.realized_pnl), 0);
+  const totalLosses = Math.abs(losses.reduce((sum, t) => sum + toNumber(t.realized_pnl), 0));
 
   const avgWin = wins.length > 0 ? totalWins / wins.length : 0;
   const avgLoss = losses.length > 0 ? totalLosses / losses.length : 0;
@@ -200,16 +200,17 @@ function calculateAverageDuration(trades: Trade[]): number {
 
   // Sort by execution time
   const sorted = [...trades].sort((a, b) => 
-    new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime()
+    new Date(a.block_time).getTime() - new Date(b.block_time).getTime()
   );
 
-  // Group by symbol to match buy/sell pairs
+  // Group by instrument_id to match buy/sell pairs
   const bySymbol = new Map<string, Trade[]>();
   sorted.forEach(trade => {
-    if (!bySymbol.has(trade.symbol)) {
-      bySymbol.set(trade.symbol, []);
+    const instId = String(trade.instrument_id);
+    if (!bySymbol.has(instId)) {
+      bySymbol.set(instId, []);
     }
-    bySymbol.get(trade.symbol)!.push(trade);
+    bySymbol.get(instId)!.push(trade);
   });
 
   let totalDuration = 0;
@@ -223,8 +224,8 @@ function calculateAverageDuration(trades: Trade[]): number {
     const pairCount = Math.min(buys.length, sells.length);
     
     for (let i = 0; i < pairCount; i++) {
-      const buyTime = new Date(buys[i].executed_at).getTime();
-      const sellTime = new Date(sells[i].executed_at).getTime();
+      const buyTime = new Date(buys[i].block_time).getTime();
+      const sellTime = new Date(sells[i].block_time).getTime();
       totalDuration += Math.abs(sellTime - buyTime);
       pairs++;
     }
@@ -238,7 +239,7 @@ function calculateAverageDuration(trades: Trade[]): number {
 // ============================================================================
 
 export interface PnLTimeSeriesPoint {
-  timestamp: string;
+  timestamp: number;
   date: string;
   cumulativePnL: number;
   tradePnL: number;
@@ -253,18 +254,18 @@ export function generatePnLTimeSeries(trades: Trade[]): PnLTimeSeriesPoint[] {
 
   // Sort by execution time
   const sorted = [...trades].sort((a, b) => 
-    new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime()
+    new Date(a.block_time).getTime() - new Date(b.block_time).getTime()
   );
 
   let cumulative = 0;
   
   return sorted.map(trade => {
-    const tradePnL = toNumber(trade.pnl);
+    const tradePnL = toNumber(trade.realized_pnl);
     cumulative += tradePnL;
 
     return {
-      timestamp: trade.executed_at,
-      date: new Date(trade.executed_at).toLocaleDateString(),
+      timestamp: new Date(trade.block_time).getTime(),
+      date: new Date(trade.block_time).toLocaleDateString(),
       cumulativePnL: cumulative,
       tradePnL,
     };
@@ -279,7 +280,7 @@ export interface DrawdownData {
   maxDrawdown: number;
   currentDrawdown: number;
   drawdownSeries: Array<{
-    timestamp: string;
+    timestamp: number;
     date: string;
     drawdown: number;
     peak: number;
@@ -301,7 +302,7 @@ export function calculateDrawdown(trades: Trade[]): DrawdownData {
 
   // Sort by execution time
   const sorted = [...trades].sort((a, b) => 
-    new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime()
+    new Date(a.block_time).getTime() - new Date(b.block_time).getTime()
   );
 
   let peak = 0;
@@ -310,7 +311,7 @@ export function calculateDrawdown(trades: Trade[]): DrawdownData {
   const drawdownSeries = [];
 
   for (const trade of sorted) {
-    cumulative += toNumber(trade.pnl);
+    cumulative += toNumber(trade.realized_pnl);
 
     // Update peak
     if (cumulative > peak) {
@@ -326,8 +327,8 @@ export function calculateDrawdown(trades: Trade[]): DrawdownData {
     }
 
     drawdownSeries.push({
-      timestamp: trade.executed_at,
-      date: new Date(trade.executed_at).toLocaleDateString(),
+      timestamp: new Date(trade.block_time).getTime(),
+      date: new Date(trade.block_time).toLocaleDateString(),
       drawdown: -currentDrawdown, // Negative for visual display
       peak,
     });
@@ -370,25 +371,26 @@ export function calculateFeeComposition(trades: Trade[]): FeeComposition {
   }
 
   const spotFees = trades
-    .filter(t => t.trade_type === 'SPOT')
-    .reduce((sum, t) => sum + toNumber(t.fees), 0);
+    .filter(t => t.market_type === 'SPOT')
+    .reduce((sum, t) => sum + Math.abs(toNumber(t.fees)), 0);
 
   const perpFees = trades
-    .filter(t => t.trade_type === 'PERP')
-    .reduce((sum, t) => sum + toNumber(t.fees), 0);
+    .filter(t => t.market_type === 'PERP')
+    .reduce((sum, t) => sum + Math.abs(toNumber(t.fees)), 0);
 
   const totalFees = spotFees + perpFees;
 
-  // Group by symbol
+  // Group by instrument_id
   const feesBySymbol = new Map<string, number>();
   trades.forEach(trade => {
-    const current = feesBySymbol.get(trade.symbol) || 0;
-    feesBySymbol.set(trade.symbol, current + toNumber(trade.fees));
+    const instId = String(trade.instrument_id);
+    const current = feesBySymbol.get(instId) || 0;
+    feesBySymbol.set(instId, current + Math.abs(toNumber(trade.fees)));
   });
 
   const feesBySymbolArray = Array.from(feesBySymbol.entries())
     .map(([symbol, fees]) => ({
-      symbol,
+      symbol: `Inst #${symbol}`,
       fees,
       percentage: totalFees > 0 ? (fees / totalFees) * 100 : 0,
     }))
@@ -448,7 +450,7 @@ export function calculateSessionPerformance(trades: Trade[]): SessionPerformance
   const sessionMap = new Map<string, Trade[]>();
   
   trades.forEach(trade => {
-    const date = new Date(trade.executed_at).toISOString().split('T')[0];
+    const date = new Date(trade.block_time).toISOString().split('T')[0];
     if (!sessionMap.has(date)) {
       sessionMap.set(date, []);
     }
@@ -457,8 +459,8 @@ export function calculateSessionPerformance(trades: Trade[]): SessionPerformance
 
   // Calculate metrics per session
   const sessionData = Array.from(sessionMap.entries()).map(([date, dayTrades]) => {
-    const pnl = dayTrades.reduce((sum, t) => sum + toNumber(t.pnl), 0);
-    const wins = dayTrades.filter(t => toNumber(t.pnl) > 0).length;
+    const pnl = dayTrades.reduce((sum, t) => sum + toNumber(t.realized_pnl), 0);
+    const wins = dayTrades.filter(t => toNumber(t.realized_pnl) > 0).length;
     const winRate = (wins / dayTrades.length) * 100;
 
     return {
@@ -538,8 +540,8 @@ export function calculateTimeBasedMetrics(trades: Trade[]): TimeBasedMetrics {
   const monthMap = new Map<string, { trades: number; pnl: number }>();
 
   trades.forEach(trade => {
-    const date = new Date(trade.executed_at);
-    const tradePnL = toNumber(trade.pnl);
+    const date = new Date(trade.block_time);
+    const tradePnL = toNumber(trade.realized_pnl);
 
     // Hour
     const hour = date.getHours();
@@ -596,6 +598,7 @@ export interface TradeJournalEntry extends Trade {
   formattedFees: string;
   formattedDate: string;
   pnLClass: 'profit' | 'loss' | 'neutral';
+  symbol: string; // explicitly typing the added field
 }
 
 /**
@@ -607,9 +610,10 @@ export function formatTradesForJournal(trades: Trade[]): TradeJournalEntry[] {
     ...trade,
     formattedPrice: `$${toNumber(trade.price).toFixed(2)}`,
     formattedQuantity: toNumber(trade.quantity).toFixed(4),
-    formattedPnL: `${toNumber(trade.pnl) >= 0 ? '+' : ''}$${toNumber(trade.pnl).toFixed(2)}`,
+    formattedPnL: `${toNumber(trade.realized_pnl) >= 0 ? '+' : ''}$${toNumber(trade.realized_pnl).toFixed(2)}`,
     formattedFees: `$${Math.abs(toNumber(trade.fees)).toFixed(6)}`,
-    formattedDate: new Date(trade.executed_at).toLocaleString(),
-    pnLClass: toNumber(trade.pnl) > 0 ? 'profit' : toNumber(trade.pnl) < 0 ? 'loss' : 'neutral',
+    formattedDate: new Date(trade.block_time).toLocaleString(),
+    pnLClass: toNumber(trade.realized_pnl) > 0 ? 'profit' : toNumber(trade.realized_pnl) < 0 ? 'loss' : 'neutral',
+    symbol: `Inst #${trade.instrument_id}`
   }));
 }

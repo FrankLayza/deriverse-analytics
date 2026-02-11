@@ -55,8 +55,8 @@ export function BreakdownCharts() {
               wrapperStyle={{
                 paddingTop: '16px',
               }}
-              formatter={(value, entry) => (
-                <span className="text-xs text-muted-foreground">{entry.payload.name || 'jack'}</span>
+              formatter={(value) => (
+                <span className="text-xs text-muted-foreground">{value}</span>
               )}
             />
           </PieChart>
@@ -101,8 +101,8 @@ export function BreakdownCharts() {
               wrapperStyle={{
                 paddingTop: '16px',
               }}
-              formatter={(value, entry) => (
-                <span className="text-xs text-muted-foreground">{entry.payload.name || 'Jack'}</span>
+              formatter={(value) => (
+                <span className="text-xs text-muted-foreground">{value}</span>
               )}
             />
           </PieChart>
