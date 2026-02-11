@@ -81,19 +81,52 @@ export function useAnalytics(userId: string, filters?: AnalyticsFilters) {
     if (!userId) return;
     
     setLoading(true);
-    try {
+    setError(null)
+   try {
+      // -------------------------------------------------------------
+      // STEP 1: Trigger the Ingestion (Solana -> Supabase)
+      // -------------------------------------------------------------
+      console.log('Starting ingestion sync...');
+      const ingestResponse = await fetch('/api/ingest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ wallet: userId }),
+      });
+
+      if (!ingestResponse.ok) {
+        const errorData = await ingestResponse.json();
+        console.warn('Ingestion skipped or failed:', errorData);
+        // We don't throw an error here because we still want to try 
+        // and show them their existing data even if the RPC fails.
+      } else {
+        const ingestData = await ingestResponse.json();
+        console.log(`Ingest complete! Inserted ${ingestData.inserted} new trades.`);
+      }
+
+      // -------------------------------------------------------------
+      // STEP 2: Fetch the Updated Analytics (Supabase -> Frontend)
+      // -------------------------------------------------------------
       const params = new URLSearchParams({ userId });
       if (filters?.symbol) params.append('symbol', filters.symbol);
       if (filters?.startDate) params.append('startDate', filters.startDate);
       if (filters?.endDate) params.append('endDate', filters.endDate);
 
       const response = await fetch(`/api/analytics?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to refetch analytics data');
+      }
+      
       const analyticsData = await response.json();
-      setData(analyticsData);
+      setData(analyticsData); // Updates the UI instantly!
+
     } catch (err) {
+      console.error('Refetch error:', err);
       setError((err as Error).message);
     } finally {
-      setLoading(false);
+      setLoading(false); // Turns off the spinner
     }
   };
 

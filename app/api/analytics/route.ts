@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/utils/supabase';
 import type { Trade } from '@/utils/supabase';
 import {
+  enrichTradesWithPnL, // 👈 Imported the enrichment function
   calculateCoreMetrics,
   calculateLongShortRatio,
   calculateRiskMetrics,
@@ -20,7 +21,6 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user from auth (you'll need to add auth middleware)
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Fetch trades from Supabase
+    // 1. Build the query
     let query = supabase
       .from('trades')
       .select('*')
@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
       query = query.lte('block_time', endDate);
     }
 
-    const { data: trades, error } = await query;
+    // 2. Execute the query to get RAW trades (PnL might be 0 here)
+    const { data: rawTrades, error } = await query;
 
     if (error) {
       console.error('Supabase error:', error);
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!trades || trades.length === 0) {
+    if (!rawTrades || rawTrades.length === 0) {
       return NextResponse.json({
         coreMetrics: calculateCoreMetrics([]),
         longShortRatio: calculateLongShortRatio([]),
@@ -78,7 +79,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Calculate all metrics
+    // 🚨 3. THE MAGIC FIX: Enrich the raw trades with actual calculated PnL
+    const trades = enrichTradesWithPnL(rawTrades as Trade[]);
+
+    // 4. Calculate all metrics using the accurately enriched trades
     const analytics = {
       // For dashboard cards
       coreMetrics: calculateCoreMetrics(trades),

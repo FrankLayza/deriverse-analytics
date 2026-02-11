@@ -26,7 +26,7 @@ export interface Trade {
   wallet_address: string;
   signature: string;
   market_type: 'SPOT' | 'PERP';
-  side: 'BUY' | 'SELL';
+  side: 'buy' | 'sell';
   symbol: string;
   price: string;
   quantity: string;

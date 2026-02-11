@@ -30,17 +30,17 @@ export async function POST(request: NextRequest) {
     const tradesToInsert = parsedTrades.map((trade: any) => ({
       user_address: wallet,
       transaction_signature: trade.signature,
-      block_time: trade.timestamp || Date.now(), // Use real block_time if your script grabs it
+      block_time: trade.blockTime ? new Date(trade.blockTime).toISOString() : new Date().toISOString(), // Use real block_time if your script grabs it
       instrument_id: trade.instrument_id || 1, // Fallback if your script doesn't grab this yet
-      side: trade.side, // 'BUY' or 'SELL'
-      order_type: trade.orderType || "MARKET",
+      side: trade.side ? trade.side.toLowerCase() : 'buy', // 'BUY' or 'SELL'
+      order_type: trade.orderType || "market",
       price: trade.price.toString(), // DB expects string
       quantity: trade.size.toString(), // DB expects string
       quote_amount: (trade.price * trade.size).toString(),
       fees: trade.feeRebates ? trade.feeRebates.toString() : "0",
       realized_pnl: trade.pnl ? trade.pnl.toString() : "0",
-      status: "CONFIRMED",
-      market_type: "SPOT", // Or 'PERP' depending on your logic
+      status: "confirmed",
+      market_type: "spot", // Or 'PERP' depending on your logic
     }));
 
     const { data, error } = await supabase

@@ -12,14 +12,17 @@ interface BreakdownChartsProps {
 export function BreakdownCharts({ fees, sessions }: BreakdownChartsProps) {
   // Transform the real fee data into the format Recharts expects
   const dynamicFeeData = [
-    { name: 'Spot Fees', value: fees.spotFees, color: 'hsl(var(--primary))' },
-    { name: 'Perp Fees', value: fees.perpFees, color: 'hsl(var(--secondary))' },
-  ].filter(item => item.value > 0); // Don't render slices for 0 value
+    { name: 'Spot Fees', value: fees.spotFees, color: 'hsl(132, 63%, 47%)' },
+    { name: 'Perp Fees', value: fees.perpFees, color: 'hsl(0, 83%, 53%)' },
+  ].filter(item => item.value > 0.000001); // Don't render slices for 0 value
+
+  const breakEvenDays = sessions.totalSessions - sessions.profitableSessions - sessions.losingSessionsCount;
 
   // Transform the real session data. Instead of hardcoded cities, we show Win/Loss sessions
   const dynamicSessionData = [
-    { name: 'Profitable Days', value: sessions.profitableSessions, color: 'hsl(var(--primary))' },
-    { name: 'Losing Days', value: sessions.losingSessionsCount, color: 'hsl(var(--secondary))' },
+    { name: 'Profitable Days', value: sessions.profitableSessions, color: 'hsl(132, 63%, 47%)' },
+    { name: 'Losing Days', value: sessions.losingSessionsCount, color: 'hsl(0, 83%, 53%)' },
+    { name: 'Break Even', value: breakEvenDays, color: 'hsl(240, 5%, 32%)' },
   ].filter(item => item.value > 0);
 
   return (
@@ -55,7 +58,7 @@ export function BreakdownCharts({ fees, sessions }: BreakdownChartsProps) {
                           <div className="font-mono text-xs flex justify-between gap-4">
                             <span className="text-muted-foreground">{payload[0].name}:</span>
                             <span className="text-foreground font-bold">
-                              ${Number(payload[0].value).toFixed(2)}
+                              ${Number(payload[0].value).toFixed(6)}
                             </span>
                           </div>
                         </div>

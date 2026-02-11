@@ -30,7 +30,7 @@ export function TopNav({ onRefresh, isSyncing }) {
                 size="sm"
                 onClick={onRefresh}
                 disabled={isSyncing}
-                className="gap-2 border-border bg-muted/30 hover:bg-muted/50 text-foreground"
+                className="cursor-pointer gap-2 border-border bg-muted/30 hover:bg-muted/50 text-foreground"
               >
                 <RefreshCw 
                   className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} 

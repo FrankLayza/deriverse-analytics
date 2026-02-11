@@ -58,7 +58,7 @@ export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
           <div>
             <div className="text-xs text-muted-foreground">Fees Paid</div>
             <div className="font-mono text-lg font-bold text-foreground">
-              ${core.totalFees.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${Math.abs(core.totalFees).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
@@ -70,9 +70,9 @@ export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Win Rate
           </span>
-          <Target className="h-4 w-4 text-muted-foreground" />
+          <Target className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-4 mt-6 px-2">
           <div className="relative h-16 w-16">
             <svg className="h-16 w-16 -rotate-90 transform" viewBox="0 0 64 64">
               <circle
@@ -80,16 +80,16 @@ export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
                 cy="32"
                 r="28"
                 fill="none"
-                stroke="hsl(var(--muted))"
-                strokeWidth="4"
+                stroke="hsl(240, 5%, 32%)"
+                strokeWidth="8"
               />
               <circle
                 cx="32"
                 cy="32"
                 r="28"
                 fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="4"
+                stroke="hsl(132, 63%, 47%)"
+                strokeWidth="8"
                 strokeDasharray={`${28 * 2 * Math.PI * winRateValue} ${28 * 2 * Math.PI}`}
                 strokeLinecap="round"
                 className="transition-all duration-1000 ease-out"

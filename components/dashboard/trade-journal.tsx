@@ -86,12 +86,12 @@ export function TradeJournal({ trades }: TradeJournalProps) {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-bold ${
-                        trade.side === 'BUY'
+                        trade.side === 'buy'
                           ? 'bg-primary/10 text-primary'
                           : 'bg-destructive/10 text-destructive'
                       }`}
                     >
-                      {trade.side === 'BUY' ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
+                      {trade.side === 'buy' ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
                       {trade.side}
                     </span>
                   </td>

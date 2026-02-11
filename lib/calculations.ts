@@ -39,6 +39,91 @@ export interface CoreMetrics {
   winRate: number;
 }
 
+
+
+// ============================================================================
+// DYNAMIC PNL ENRICHMENT ENGINE
+// ============================================================================
+
+/**
+ * Takes raw trades from the database (which might have 0 PnL) and 
+ * dynamically calculates the true Realized PnL based on execution history.
+ */
+export function enrichTradesWithPnL(trades: Trade[]): Trade[] {
+  if (!trades || trades.length === 0) return [];
+
+  // 1. Sort trades chronologically (oldest to newest) so the math flows forward in time
+  const sortedTrades = [...trades].sort((a, b) => 
+    new Date(a.block_time).getTime() - new Date(b.block_time).getTime()
+  );
+
+  // 2. Group by instrument_id (We must track positions for each token separately)
+  const tradesByInstrument = new Map<string, Trade[]>();
+  sortedTrades.forEach(t => {
+    const id = String(t.instrument_id);
+    if (!tradesByInstrument.has(id)) tradesByInstrument.set(id, []);
+    tradesByInstrument.get(id)!.push(t);
+  });
+
+  const enrichedTrades: Trade[] = [];
+
+  // 3. Process each instrument independently
+  tradesByInstrument.forEach(instrumentTrades => {
+    let currentPosition = 0;
+    let avgEntryPrice = 0;
+
+    instrumentTrades.forEach(trade => {
+      const side = trade.side?.toUpperCase() || 'BUY';
+      const price = toNumber(trade.price);
+      const size = toNumber(trade.quantity);
+      let realizedPnl = 0;
+
+      if (side === 'BUY') {
+        if (currentPosition < 0) {
+          // Closing a Short Position
+          const sizeClosed = Math.min(Math.abs(currentPosition), size);
+          realizedPnl = (avgEntryPrice - price) * sizeClosed;
+
+          currentPosition += size;
+          if (currentPosition > 0) avgEntryPrice = price; // Flipped to Long
+          else if (currentPosition === 0) avgEntryPrice = 0;
+        } else {
+          // Opening/Adding to a Long Position
+          const totalValue = (currentPosition * avgEntryPrice) + (size * price);
+          currentPosition += size;
+          avgEntryPrice = currentPosition === 0 ? 0 : totalValue / currentPosition;
+        }
+      } else if (side === 'SELL') {
+        if (currentPosition > 0) {
+          // Closing a Long Position
+          const sizeClosed = Math.min(currentPosition, size);
+          realizedPnl = (price - avgEntryPrice) * sizeClosed;
+
+          currentPosition -= size;
+          if (currentPosition < 0) avgEntryPrice = price; // Flipped to Short
+          else if (currentPosition === 0) avgEntryPrice = 0;
+        } else {
+          // Opening/Adding to a Short Position
+          const totalValue = (Math.abs(currentPosition) * avgEntryPrice) + (size * price);
+          currentPosition -= size;
+          avgEntryPrice = currentPosition === 0 ? 0 : totalValue / Math.abs(currentPosition);
+        }
+      }
+
+      // 4. Create a new enriched trade object
+      enrichedTrades.push({
+        ...trade,
+        realized_pnl: realizedPnl.toString()
+      });
+    });
+  });
+
+  // 5. Re-sort from Newest to Oldest (standard dashboard display format)
+  return enrichedTrades.sort((a, b) => 
+    new Date(b.block_time).getTime() - new Date(a.block_time).getTime()
+  );
+}
+
 /**
  * Calculate core metrics for dashboard cards
  * Used for: Total PnL Card, Volume Card, Fees Card
@@ -110,8 +195,8 @@ export function calculateLongShortRatio(trades: Trade[]): LongShortMetrics {
     };
   }
 
-  const longs = trades.filter(t => t.side === 'BUY');
-  const shorts = trades.filter(t => t.side === 'SELL');
+  const longs = trades.filter(t => t.side === 'buy');
+  const shorts = trades.filter(t => t.side === 'sell');
 
   const longVolume = longs.reduce((sum, t) => 
     sum + (toNumber(t.price) * toNumber(t.quantity)), 0
@@ -218,8 +303,8 @@ function calculateAverageDuration(trades: Trade[]): number {
 
   // Match buy/sell pairs per symbol
   bySymbol.forEach(symbolTrades => {
-    const buys = symbolTrades.filter(t => t.side === 'BUY');
-    const sells = symbolTrades.filter(t => t.side === 'SELL');
+    const buys = symbolTrades.filter(t => t.side === 'buy');
+    const sells = symbolTrades.filter(t => t.side === 'sell');
 
     const pairCount = Math.min(buys.length, sells.length);
     
