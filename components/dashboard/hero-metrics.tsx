@@ -11,10 +11,11 @@ interface HeroMetricsProps {
 export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
   // Win rate percentage for the SVG circle dash array
   const winRateValue = core.winRate / 100;
-  const longPercentage = longShort.longTrades > 0 || longShort.shortTrades > 0 
-    ? (longShort.longTrades / (longShort.longTrades + longShort.shortTrades)) * 100 
-    : 50;
-  const shortPercentage = 100 - longPercentage;
+const totalTrades = longShort.longTrades + longShort.shortTrades;
+const longPercentage = totalTrades > 0 
+  ? (longShort.longTrades / totalTrades) * 100 
+  : 50; // Default if no trades
+const shortPercentage = 100 - longPercentage;
 
   return (
     <div className="grid grid-cols-1 gap-4 px-6 py-6 md:grid-cols-2 lg:grid-cols-4">
@@ -58,7 +59,7 @@ export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
           <div>
             <div className="text-xs text-muted-foreground">Fees Paid</div>
             <div className="font-mono text-lg font-bold text-foreground">
-              ${Math.abs(core.totalFees).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${Math.abs(core.totalFees).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
             </div>
           </div>
         </div>
@@ -114,7 +115,7 @@ export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
           </span>
           <PieChart className="h-4 w-4 text-muted-foreground" />
         </div>
-        <div className="space-y-2">
+        <div className=" mt-4 space-y-4">
           <div className="flex items-center gap-2">
             <span className="text-[10px] w-8 text-muted-foreground uppercase">Long</span>
             <div className="flex-1 overflow-hidden rounded-full bg-muted h-1.5">

@@ -195,8 +195,8 @@ export function calculateLongShortRatio(trades: Trade[]): LongShortMetrics {
     };
   }
 
-  const longs = trades.filter(t => t.side === 'buy');
-  const shorts = trades.filter(t => t.side === 'sell');
+  const longs = trades.filter(t => t.side?.toUpperCase() === 'buy');
+  const shorts = trades.filter(t => t.side?.toUpperCase() === 'sell');
 
   const longVolume = longs.reduce((sum, t) => 
     sum + (toNumber(t.price) * toNumber(t.quantity)), 0
@@ -456,11 +456,11 @@ export function calculateFeeComposition(trades: Trade[]): FeeComposition {
   }
 
   const spotFees = trades
-    .filter(t => t.market_type === 'SPOT')
+    .filter(t => t.market_type?.toUpperCase() === 'SPOT')
     .reduce((sum, t) => sum + Math.abs(toNumber(t.fees)), 0);
 
   const perpFees = trades
-    .filter(t => t.market_type === 'PERP')
+    .filter(t => t.market_type?.toUpperCase() === 'PERP')
     .reduce((sum, t) => sum + Math.abs(toNumber(t.fees)), 0);
 
   const totalFees = spotFees + perpFees;
