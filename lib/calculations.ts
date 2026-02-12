@@ -477,11 +477,11 @@ export function calculateFeeComposition(trades: Trade[]): FeeComposition {
   }
 
   const spotFees = trades
-    .filter((t) => t.market_type?.toUpperCase() === "SPOT")
+    .filter((t) => t.order_type?.toUpperCase() === "SPOT")
     .reduce((sum, t) => sum + Math.abs(toNumber(t.fees)), 0);
 
   const perpFees = trades
-    .filter((t) => t.market_type?.toUpperCase() === "PERP")
+    .filter((t) => t.order_type?.toUpperCase() === "PERP")
     .reduce((sum, t) => sum + Math.abs(toNumber(t.fees)), 0);
 
   const totalFees = spotFees + perpFees;

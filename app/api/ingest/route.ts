@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         block_time: trade.blockTime 
           ? new Date(trade.blockTime).toISOString() 
           : new Date().toISOString(),
-        instrument_id: trade.orderId || trade.clientId || 1,
+        instrument_id: trade.clientId || 1,
         side: trade.side ? trade.side.toLowerCase() : 'buy',
         order_type: trade.orderType || "market",
         price: trade.price.toString(),

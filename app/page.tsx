@@ -30,7 +30,7 @@ export default function Home() {
   const { data, loading, error, refetch, lastSyncTime, isAutoSyncing } =
     useAnalytics(walletAddress, filters, {
       autoSync: true,
-      syncInterval: 5 * 5 * 30000,
+      syncInterval: 5 * 30000,
       syncOnMount: true,
     });
 

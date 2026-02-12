@@ -271,4 +271,4 @@ export async function fetchMyTrades(wallet: string) {
   }
 }
 
-fetchMyTrades("FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q");
+// fetchMyTrades("FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q");
