@@ -1,11 +1,11 @@
 /**
- * useAnalytics Hook
- * Fetches and manages analytics data from the API
+ * useAnalytics Hook - WITH AUTO-SYNC
+ * Automatically fetches new trades and updates analytics
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type {
   CoreMetrics,
   LongShortMetrics,
@@ -36,78 +36,33 @@ export interface AnalyticsFilters {
   endDate?: string;
 }
 
-export function useAnalytics(userId: string, filters?: AnalyticsFilters) {
+export function useAnalytics(
+  userId: string, 
+  filters?: AnalyticsFilters,
+  options?: {
+    autoSync?: boolean;        // Enable auto-sync
+    syncInterval?: number;     // Sync interval in milliseconds (default: 30s)
+    syncOnMount?: boolean;     // Sync immediately on mount (default: true)
+  }
+) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+  // Options with defaults
+  const autoSync = options?.autoSync ?? false;
+  const syncInterval = options?.syncInterval ?? 30000; // 30 seconds
+  const syncOnMount = options?.syncOnMount ?? true;
 
-    const fetchAnalytics = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Build query params
-        const params = new URLSearchParams({ userId });
-        if (filters?.symbol) params.append('symbol', filters.symbol);
-        if (filters?.startDate) params.append('startDate', filters.startDate);
-        if (filters?.endDate) params.append('endDate', filters.endDate);
-
-        const response = await fetch(`/api/analytics?${params.toString()}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch analytics');
-        }
-
-        const analyticsData = await response.json();
-        setData(analyticsData);
-      } catch (err) {
-        console.error('Analytics error:', err);
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalytics();
-  }, [userId, filters?.symbol, filters?.startDate, filters?.endDate]);
-
-  const refetch = async () => {
+  /**
+   * Fetch analytics data from API
+   */
+  const fetchAnalytics = async () => {
     if (!userId) return;
-    
-    setLoading(true);
-    setError(null)
-   try {
-      // -------------------------------------------------------------
-      // STEP 1: Trigger the Ingestion (Solana -> Supabase)
-      // -------------------------------------------------------------
-      console.log('Starting ingestion sync...');
-      const ingestResponse = await fetch('/api/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ wallet: userId }),
-      });
 
-      if (!ingestResponse.ok) {
-        const errorData = await ingestResponse.json();
-        console.warn('Ingestion skipped or failed:', errorData);
-        // We don't throw an error here because we still want to try 
-        // and show them their existing data even if the RPC fails.
-      } else {
-        const ingestData = await ingestResponse.json();
-        console.log(`Ingest complete! Inserted ${ingestData.inserted} new trades.`);
-      }
-
-      // -------------------------------------------------------------
-      // STEP 2: Fetch the Updated Analytics (Supabase -> Frontend)
-      // -------------------------------------------------------------
+    try {
       const params = new URLSearchParams({ userId });
       if (filters?.symbol) params.append('symbol', filters.symbol);
       if (filters?.startDate) params.append('startDate', filters.startDate);
@@ -116,19 +71,115 @@ export function useAnalytics(userId: string, filters?: AnalyticsFilters) {
       const response = await fetch(`/api/analytics?${params.toString()}`);
       
       if (!response.ok) {
-        throw new Error('Failed to refetch analytics data');
+        throw new Error('Failed to fetch analytics');
       }
-      
-      const analyticsData = await response.json();
-      setData(analyticsData); // Updates the UI instantly!
 
+      const analyticsData = await response.json();
+      setData(analyticsData);
+      setError(null);
     } catch (err) {
-      console.error('Refetch error:', err);
+      console.error('Analytics error:', err);
       setError((err as Error).message);
-    } finally {
-      setLoading(false); // Turns off the spinner
     }
   };
 
-  return { data, loading, error, refetch };
+  /**
+   * Sync trades from blockchain + fetch analytics
+   */
+  const syncAndFetch = async (showLoading: boolean = true) => {
+    if (!userId) return;
+    
+    if (showLoading) setLoading(true);
+    setError(null);
+
+    try {
+      console.log('🔄 Starting sync...');
+
+      // Step 1: Ingest new trades from blockchain
+      const ingestResponse = await fetch('/api/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: userId }),
+      });
+
+      if (!ingestResponse.ok) {
+        const errorData = await ingestResponse.json();
+        console.warn('Ingestion skipped or failed:', errorData);
+      } else {
+        const ingestData = await ingestResponse.json();
+        console.log(`✅ Synced ${ingestData.inserted} new trades`);
+      }
+
+      // Step 2: Fetch updated analytics
+      await fetchAnalytics();
+      
+      setLastSyncTime(new Date());
+      console.log('✅ Sync complete!');
+
+    } catch (err) {
+      console.error('Sync error:', err);
+      setError((err as Error).message);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
+
+  /**
+   * Manual refetch (for Sync button)
+   */
+  const refetch = async () => {
+    await syncAndFetch(true); // Show loading spinner
+  };
+
+  // Initial load
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    const initialize = async () => {
+      if (syncOnMount) {
+        // Sync on mount
+        await syncAndFetch(true);
+      } else {
+        // Just fetch existing data
+        setLoading(true);
+        await fetchAnalytics();
+        setLoading(false);
+      }
+    };
+
+    initialize();
+  }, [userId, filters?.symbol, filters?.startDate, filters?.endDate]);
+
+  // Auto-sync interval
+  useEffect(() => {
+    if (!userId || !autoSync) return;
+
+    console.log(`🔄 Auto-sync enabled: every ${syncInterval / 1000}s`);
+
+    // Set up interval for auto-sync
+    intervalRef.current = setInterval(() => {
+      console.log('⏰ Auto-sync triggered');
+      syncAndFetch(false); 
+    }, syncInterval);
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        console.log('🛑 Auto-sync stopped');
+      }
+    };
+  }, [userId, autoSync, syncInterval]);
+
+  return { 
+    data, 
+    loading, 
+    error, 
+    refetch,
+    lastSyncTime,
+    isAutoSyncing: autoSync,
+  };
 }

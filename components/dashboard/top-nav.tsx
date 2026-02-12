@@ -10,7 +10,7 @@ export function TopNav({ onRefresh, isSyncing }) {
   const { connected, publicKey, disconnect } = useWallet()
 
   return (
-    <div className="border-b border-border bg-card">
+    <div className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/60 backdrop-blur-xl supports-backdrop-filter:bg-background/60">
       <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary">
@@ -57,11 +57,11 @@ export function TopNav({ onRefresh, isSyncing }) {
           ) : (
             <Button
               onClick={() => setVisible(true)}
-              className="cursor-pointer gap-1 bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all duration-200 hover:bg-primary/90 hover:shadow-primary/40 sm:gap-2"
+              className="cursor-pointer py-5 gap-1 bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all duration-200 hover:bg-primary/90 hover:shadow-primary/40 sm:gap-2"
               size="sm"
             >
               <WalletIcon className="h-5 w-4" />
-              <span className="hidden sm:inline">Connect Wallet</span>
+              <span className="hidden sm:inline font-extrabold">Connect Wallet</span>
               <span className="sm:hidden">Connect</span>
               <ArrowRight className="hidden h-4 w-4 opacity-60 sm:inline" />
             </Button>

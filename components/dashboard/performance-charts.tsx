@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 import {
   PnLTimeSeriesPoint,
   DrawdownData,
@@ -45,15 +45,6 @@ export function PerformanceCharts({
 }: PerformanceChartsProps) {
   const [timeframe, setTimeframe] = useState("All");
 
-  // const chartData = useMemo(() => {
-  //   return pnlSeries.map((point, index) => ({
-  //     date: point.date,
-  //     pnl: point.cumulativePnL,
-  //     drawdown: drawdown.drawdownSeries[index]?.drawdown || 0,
-  //   }));
-  // }, [pnlSeries, drawdown]);
-
-  // Combine PnL and Drawdown series, filter by timeframe, and format the X-Axis dates dynamically!
   // Combine PnL and Drawdown series, filter by timeframe, and format the X-Axis dates dynamically!
   const chartData = useMemo(() => {
     if (!pnlSeries || pnlSeries.length === 0) return [];
@@ -104,7 +95,7 @@ export function PerformanceCharts({
         }); // "Feb 11"
       }
 
-      // 🚨 THE MISSING PIECE: Long format for the Hover Tooltip
+      // Long format for the Hover Tooltip
       const fullDate = dateObj.toLocaleString(undefined, {
         month: "short",
         day: "numeric",
@@ -123,7 +114,7 @@ export function PerformanceCharts({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-6 py-6">
       {/* PnL & Drawdown Chart - 2/3 width */}
-      <div className="lg:col-span-2 rounded-lg border border-border bg-card p-4">
+      <div className="lg:col-span-2 rounded-lg border border-border bg-card p-4 flex flex-col">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
             Historical PnL & Drawdown
@@ -134,7 +125,7 @@ export function PerformanceCharts({
                 key={t}
                 size="sm"
                 variant={timeframe === t ? "default" : "outline"}
-                className={`h-7 px-3 text-xs font-medium ${
+                className={`cursor-pointer h-7 px-3 text-xs font-medium ${
                   timeframe === t
                     ? "bg-primary text-primary-foreground"
                     : "border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -147,123 +138,136 @@ export function PerformanceCharts({
           </div>
         </div>
 
-        <ChartContainer
-          config={{
-            pnl: {
-              label: "PnL",
-              color: "hsl(132, 63%, 47%)",
-            },
-            drawdown: {
-              label: "Drawdown",
-              color: "hsl(0, 83%, 53%)",
-            },
-          }}
-          className="h-64 w-full mt-8"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={chartData}
-              margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="hsl(132, 63%, 47%)"
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="hsl(132, 63%, 47%)"
-                    stopOpacity={0.01}
-                  />
-                </linearGradient>
-                <linearGradient id="colorDrawdown" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="hsl(0, 83%, 53%)"
-                    stopOpacity={0.2}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="hsl(0, 83%, 53%)"
-                    stopOpacity={0.01}
-                  />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
-                vertical={false}
-              />
-              <XAxis
-                dy={10}
-                dataKey="date"
-                stroke="hsl(var(--muted-foreground))"
-                style={{ fontSize: "11px" }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                style={{ fontSize: "11px" }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(val) => `$${val.toLocaleString()}`}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload?.length) {
-                    return (
-                      <div className="rounded border border-border bg-card p-2 shadow-lg">
-                        <p className="mb-1 text-[10px] text-muted-foreground font-mono">
-                          {payload[0].payload.fullDate}
-                        </p>
-                        {payload.map((entry, index) => (
-                          <div
-                            key={index}
-                            className="font-mono text-xs flex justify-between gap-4"
-                            style={{ color: entry.color }}
-                          >
-                            <span>{entry.name}:</span>
-                            <span className="font-bold">
-                              $
-                              {entry.value?.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                              })}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="pnl"
-                stroke="hsl(132, 63%, 47%)"
-                fillOpacity={1}
-                fill="url(#colorPnl)"
-                name="PnL"
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="drawdown"
-                stroke="hsl(0, 83%, 53%)"
-                fillOpacity={1}
-                fill="url(#colorDrawdown)"
-                name="Drawdown"
-                strokeWidth={1}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartContainer>
+        {/* 🚨 THE FIX: Conditional Rendering for Empty Data */}
+        {chartData.length > 0 ? (
+          <ChartContainer
+            config={{
+              pnl: {
+                label: "PnL",
+                color: "hsl(132, 63%, 47%)",
+              },
+              drawdown: {
+                label: "Drawdown",
+                color: "hsl(0, 83%, 53%)",
+              },
+            }}
+            className="h-64 w-full mt-8"
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={chartData}
+                margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(132, 63%, 47%)"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(132, 63%, 47%)"
+                      stopOpacity={0.01}
+                    />
+                  </linearGradient>
+                  <linearGradient id="colorDrawdown" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(0, 83%, 53%)"
+                      stopOpacity={0.2}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(0, 83%, 53%)"
+                      stopOpacity={0.01}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                  vertical={false}
+                />
+                <XAxis
+                  dy={10}
+                  dataKey="date"
+                  stroke="hsl(var(--muted-foreground))"
+                  style={{ fontSize: "11px" }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  style={{ fontSize: "11px" }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(val) => `$${val.toLocaleString()}`}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload?.length) {
+                      return (
+                        <div className="rounded border border-border bg-card p-2 shadow-lg">
+                          <p className="mb-1 text-[10px] text-muted-foreground font-mono">
+                            {payload[0].payload.fullDate}
+                          </p>
+                          {payload.map((entry, index) => (
+                            <div
+                              key={index}
+                              className="font-mono text-xs flex justify-between gap-4"
+                              style={{ color: entry.color }}
+                            >
+                              <span>{entry.name}:</span>
+                              <span className="font-bold font-mono">
+                                $
+                                {entry.value?.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="pnl"
+                  stroke="hsl(132, 63%, 47%)"
+                  fillOpacity={1}
+                  fill="url(#colorPnl)"
+                  name="PnL"
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="drawdown"
+                  stroke="hsl(0, 83%, 53%)"
+                  fillOpacity={1}
+                  fill="url(#colorDrawdown)"
+                  name="Drawdown"
+                  strokeWidth={1}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        ) : (
+          /* 🚨 Fallback State */
+          <div className="mt-8 flex h-64 w-full flex-col items-center justify-center rounded-md border border-dashed border-border/50 bg-muted/20">
+            <div className="text-center text-muted-foreground">
+              <p className="text-sm font-medium">No activity found</p>
+              <p className="text-xs opacity-70">
+                No trades recorded for this timeframe
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Risk Management Card */}
+      {/* Risk Management Card (Unchanged) */}
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
           Risk & Averages

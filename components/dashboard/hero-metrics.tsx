@@ -32,7 +32,7 @@ const shortPercentage = 100 - longPercentage;
           )}
         </div>
         <div className="mt-5 mb-3 flex items-end gap-3">
-          <div className={`font-mono text-3xl font-bold ${core.totalPnL >= 0 ? 'text-primary' : 'text-destructive'}`}>
+          <div className={`font-mono text-3xl font-bold tracking-tight ${core.totalPnL >= 0 ? 'text-primary' : 'text-destructive'}`}>
             {core.totalPnL >= 0 ? '+' : ''}${core.totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
