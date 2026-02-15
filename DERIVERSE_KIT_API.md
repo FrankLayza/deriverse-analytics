@@ -1,5 +1,8 @@
 # Deriverse Kit SDK API Documentation
 
+> **Package:** `@deriverse/kit` v1.0.40 (ESM, Apache-2.0)  
+> **Dependencies:** `@solana/kit ^6.0.1`, `@solana-program/system ^0.11.0`, `bs58 ^6.0.0`, `zod ^4.3.6`
+
 This document outlines all available functions, methods, and types from the `@deriverse/kit` package that can be used to build a comprehensive trading analytics dashboard.
 
 ## Table of Contents
@@ -8,7 +11,10 @@ This document outlines all available functions, methods, and types from the `@de
 3. [Types & Interfaces](#types--interfaces)
 4. [Log Models & Event Types](#log-models--event-types)
 5. [Structure Models](#structure-models)
-6. [Usage Examples](#usage-examples)
+6. [Enums](#enums)
+7. [Zod Validation Schemas](#zod-validation-schemas)
+8. [Instruction Builder Functions](#instruction-builder-functions)
+9. [Usage Examples](#usage-examples)
 
 ---
 
@@ -139,11 +145,13 @@ Decodes transaction log messages into structured event objects. This is the core
 
 **Returns:** Array of decoded log messages (trade events, deposits, withdrawals, etc.)
 
-**Use Case:** 
+**Use Case:**
 - Extract trade fills from transaction logs
 - Parse deposit/withdrawal events
 - Track order placements and cancellations
 - Analyze fees and funding payments
+
+**Note:** Returns a union type `LogMessage` which is one of 30 different report model types.
 
 **Example:**
 ```typescript
@@ -332,6 +340,78 @@ Gets detailed list of open perpetual orders.
 
 ---
 
+### Additional Data Methods
+
+#### `addToken(tokenAccount: Address): Promise<void>`
+
+Manually adds a token to the engine's token registry.
+
+**Parameters:**
+- `tokenAccount`: Deriverse token account address
+
+**Use Case:** Register tokens not automatically loaded during initialization.
+
+---
+
+#### `addInstr(instrAccount: Address): Promise<void>`
+
+Manually adds an instrument to the engine's instrument registry.
+
+**Parameters:**
+- `instrAccount`: Deriverse instrument account address
+
+**Use Case:** Register instruments not automatically loaded during initialization.
+
+---
+
+#### `instrLut(args: InstrId): Address`
+
+Gets the lookup table address for an instrument.
+
+**Parameters:**
+```typescript
+{ instrId: number }
+```
+
+**Returns:** Address of the instrument's lookup table
+
+---
+
+#### `getTokenAccount(mint: Address): Promise<Address>`
+
+Gets the Deriverse token account address from a mint address.
+
+**Parameters:**
+- `mint`: SPL token mint address
+
+**Returns:** Deriverse token account address
+
+---
+
+#### `getSpotContext(instrAccountHeaderModel: InstrAccountHeaderModel): Promise<AccountMeta[]>`
+
+Gets the account context needed for spot trading instructions.
+
+**Use Case:** Build transaction contexts for spot operations.
+
+---
+
+#### `getPerpContext(instrAccountHeaderModel: InstrAccountHeaderModel): Promise<AccountMeta[]>`
+
+Gets the account context needed for perpetual trading instructions.
+
+**Use Case:** Build transaction contexts for perp operations.
+
+---
+
+#### `getSpotCandles(instrAccountHeaderModel: InstrAccountHeaderModel): Promise<AccountMeta[]>`
+
+Gets the account context for spot candle data.
+
+**Use Case:** Access historical candle/OHLCV data for charting.
+
+---
+
 ### Instrument & Token Utilities
 
 #### `getTokenId(mint: Address): Promise<number | null>`
@@ -415,7 +495,7 @@ Gets price step between orderbook lines for perpetual markets.
 
 ### Instruction Building (Transaction Creation)
 
-The Engine provides methods to build transaction instructions. These are used to create transactions but are less relevant for analytics.
+The Engine provides methods to build transaction instructions. These are used to create transactions but are less relevant for analytics. All return `Promise<Instruction>` unless noted.
 
 #### Spot Trading Instructions
 - `depositInstruction(args: DepositArgs)`
@@ -425,6 +505,7 @@ The Engine provides methods to build transaction instructions. These are used to
 - `spotQuotesReplaceInstruction(args: SpotQuotesReplaceArgs)`
 - `spotOrderCancelInstruction(args: SpotOrderCancelArgs)`
 - `spotMassCancelInstruction(args: SpotMassCancelArgs)`
+- `swapInstruction(args: SwapArgs)`
 
 #### Perpetual Trading Instructions
 - `perpDepositInstruction(args: PerpDepositArgs)`
@@ -436,6 +517,43 @@ The Engine provides methods to build transaction instructions. These are used to
 - `perpMassCancelInstruction(args: PerpMassCancelArgs)`
 - `perpChangeLeverageInstruction(args: PerpChangeLeverageArgs)`
 - `perpStatisticsResetInstruction(args: PerpStatisticsResetArgs)`
+
+#### Multi-Instruction Methods (return `Promise<Instruction[]>`)
+- `upgradeToPerpInstructions(args: InstrId)` — Upgrade a spot instrument to also support perps
+- `newInstrumentInstructions(args: NewInstrumentArgs)` — Create a new instrument
+
+#### Other Instructions
+- `newRefLinkInstruction()` — Create a new referral link (no args needed)
+
+---
+
+## Utility Functions
+
+Exported from the package root alongside the Engine class:
+
+#### `getSpotPriceStep(price: number): number`
+Get price step between orderbook lines for spot markets.
+
+#### `getPerpPriceStep(price: number): number`
+Get price step between orderbook lines for perpetual markets.
+
+#### `tokenDec(tokens: Map<number, TokenStateModel>, tokenId: number, uiNumbers: boolean): number`
+Get token decimal factor for UI number conversion.
+
+#### `perpSeatReserve(activeUsers: number): number`
+Calculate the perp seat reserve given the number of active users.
+
+#### `getMultipleSpotOrders(data: Base64EncodedDataResponse, firstEntry: number, clientId: number): OrderModel[]`
+Parse multiple spot orders from raw account data.
+
+#### `getMultiplePerpOrders(data: Base64EncodedDataResponse, firstEntry: number, clientId: number): OrderModel[]`
+Parse multiple perp orders from raw account data.
+
+#### `findAssociatedTokenAddress(owner: Address, tokenProgramId: Address, mint: Address): Promise<Address>`
+Derive the associated token address for a given owner, program, and mint.
+
+#### `getLookupTableAddress(authority: Address, slot: number): Promise<Address>`
+Derive the lookup table address for a given authority and slot.
 
 ---
 
@@ -597,6 +715,279 @@ Represents fee payments.
 
 ---
 
+#### SpotlpTradeReportModel
+
+Represents a liquidity provider trade on spot markets.
+
+```typescript
+{
+  tag: number;              // LogType.spotLpTrade (7)
+  side: number;
+  clientId: number;
+  time: number;
+  instrId: number;
+  orderId: number;
+  qty: number;
+  tokens: number;
+  crncy: number;
+}
+```
+
+---
+
+#### EarningsReportModel
+
+Represents earnings (dividends/rewards).
+
+```typescript
+{
+  tag: number;              // LogType.earnings (8)
+  clientId: number;
+  tokenId: number;
+  time: number;
+  amount: number;
+}
+```
+
+---
+
+#### DrvsAirdropReportModel
+
+Represents a DRVS token airdrop.
+
+```typescript
+{
+  tag: number;              // LogType.drvsAirdrop (9)
+  clientId: number;
+  amount: number;
+  time: number;
+}
+```
+
+---
+
+#### SpotPlaceOrderReportModel / PerpPlaceOrderReportModel
+
+Represents an order placement event.
+
+```typescript
+// Spot
+{
+  tag: number;              // LogType.spotPlaceOrder (10)
+  ioc: number;              // Immediate-or-cancel flag
+  side: number;
+  orderType: number;        // OrderType enum
+  clientId: number;
+  orderId: number;
+  qty: number;
+  price: number;
+  instrId: number;
+  time: number;
+}
+// Perp adds: leverage: number
+```
+
+---
+
+#### SpotNewOrderReportModel / PerpNewOrderReportModel
+
+Represents a resting order being added to the book.
+
+```typescript
+{
+  tag: number;              // LogType.spotNewOrder (12) / perpNewOrder (20)
+  side: number;
+  qty: number;              // or perps for perp
+  crncy: number;
+}
+```
+
+---
+
+#### SpotOrderCancelReportModel / PerpOrderCancelReportModel
+
+Represents an order cancellation.
+
+```typescript
+{
+  tag: number;
+  side: number;
+  clientId: number;
+  instrId: number;
+  time: number;
+  orderId: number;
+  qty: number;              // or perps for perp
+  crncy: number;
+}
+```
+
+---
+
+#### SpotOrderRevokeReportModel / PerpOrderRevokeReportModel
+
+Represents a forced order revocation.
+
+```typescript
+{
+  tag: number;
+  side: number;
+  clientId: number;
+  orderId: number;
+  qty: number;              // or perps for perp
+  crncy: number;
+}
+```
+
+---
+
+#### SpotMassCancelReportModel / PerpMassCancelReportModel
+
+Represents individual orders cancelled during a mass-cancel.
+
+```typescript
+{
+  tag: number;
+  side: number;
+  orderId: number;
+  qty: number;              // or perps for perp
+  crncy: number;
+}
+```
+
+---
+
+#### SpotPlaceMassCancelReportModel / PerpPlaceMassCancelReportModel
+
+Represents the initiation of a mass-cancel operation.
+
+```typescript
+{
+  tag: number;
+  clientId: number;
+  instrId: number;
+  time: number;
+}
+```
+
+---
+
+#### SwapOrderReportModel
+
+Represents a swap order event.
+
+```typescript
+{
+  tag: number;              // LogType.swapOrder (31)
+  side: number;
+  orderType: number;
+  orderId: number;
+  qty: number;
+  price: number;
+  time: number;
+  instrId: number;
+}
+```
+
+---
+
+#### BuyMarketSeatReportModel
+
+Represents purchasing a perp market seat.
+
+```typescript
+{
+  tag: number;              // LogType.buyMarketSeat (29)
+  clientId: number;
+  instrId: number;
+  time: number;
+  amount: number;
+  seatPrice: number;
+}
+```
+
+---
+
+#### SellMarketSeatReportModel
+
+Represents selling a perp market seat.
+
+```typescript
+{
+  tag: number;              // LogType.sellMarketSeat (30)
+  clientId: number;
+  instrId: number;
+  time: number;
+  seatPrice: number;
+}
+```
+
+---
+
+#### PerpDepositReportModel / PerpWithdrawReportModel
+
+Represents perp margin account deposits/withdrawals.
+
+```typescript
+{
+  tag: number;              // LogType.perpDeposit (3) / perpWithdraw (4)
+  clientId: number;
+  instrId: number;
+  time: number;
+  amount: number;
+}
+```
+
+---
+
+#### FeesDepositReportModel / FeesWithdrawReportModel
+
+Represents fee prepayment deposits/withdrawals.
+
+```typescript
+{
+  tag: number;              // LogType.feesDeposit (5) / feesWithdraw (6)
+  clientId: number;
+  tokenId: number;
+  time: number;
+  amount: number;
+}
+```
+
+---
+
+#### PerpChangeLeverageReportModel
+
+Represents a leverage change event.
+
+```typescript
+{
+  tag: number;              // LogType.perpChangeLeverage (28)
+  leverage: number;
+  clientId: number;
+  instrId: number;
+  time: number;
+}
+```
+
+---
+
+#### MoveSpotAvailFundsReportModel
+
+Represents moving available funds from spot temp account.
+
+```typescript
+{
+  tag: number;              // LogType.moveSpot (32)
+  clientId: number;
+  instrId: number;
+  time: number;
+  qty: number;
+  crncy: number;
+}
+```
+
+---
+
 #### DepositReportModel / WithdrawReportModel
 
 Represents deposits and withdrawals.
@@ -615,6 +1006,24 @@ Represents deposits and withdrawals.
 - Track capital flows
 - Calculate net deposits
 - Analyze funding patterns
+
+---
+
+### Token Interface
+
+```typescript
+interface Token {
+  account: Address;         // Deriverse account for token data
+  mint: Address;            // SPL token mint address
+  programAddress: Address;  // SPL token account where tokens are stored
+  id: number;               // Deriverse token ID
+  decimals: number;
+  baseCrncy: boolean;       // True if this is a currency token
+  pool: boolean;            // True if this is a pool token
+  token2022: boolean;       // True if Token-2022 standard
+  mainInstrId?: number;     // Main instrument ID if pool token
+}
+```
 
 ---
 
@@ -721,6 +1130,66 @@ Represents an orderbook price level.
 - Display orderbook depth
 - Calculate market depth
 - Analyze liquidity
+
+---
+
+### CandleModel
+
+Represents a single candlestick (OHLCV) data point.
+
+```typescript
+{
+  open: number;
+  close: number;
+  max: number;              // High
+  min: number;              // Low
+  assetTokens: number;      // Volume in asset tokens
+  crncyTokens: number;      // Volume in currency tokens
+  time: number;             // Candle timestamp
+  counter: number;
+}
+```
+
+**Use Case:**
+- Build OHLCV charts (1m, 15m, daily candles)
+- Calculate technical indicators
+- Analyze historical price action
+
+---
+
+### CommunityData
+
+```typescript
+interface CommunityData {
+  header: CommunityAccountHeaderModel;
+  data: Map<number, BaseCrncyRecordModel>;
+}
+```
+
+---
+
+### ClientCommunityData
+
+```typescript
+interface ClientCommunityData {
+  header: ClientCommunityAccountHeaderModel;
+  data: Map<number, ClientCommunityRecordModel>;
+}
+```
+
+---
+
+### ClientRefProgramData
+
+```typescript
+interface ClientRefProgramData {
+  address: Address;         // Referral wallet
+  expiration: number;       // Expiration date
+  clientId: number;         // Referrer client ID
+  discount: number;         // Fee discount
+  ratio: number;            // Referral payment share
+}
+```
 
 ---
 
@@ -957,6 +1426,11 @@ console.log({
 export const PROGRAM_ID: Address<"DRVSpZ2YUYYKgZP8XtLhAGtT1zYSCKzeHfb4DgRnrgqD">
 ```
 
+### VERSION
+```typescript
+export const VERSION = 1
+```
+
 ### MARKET_DEPTH
 ```typescript
 export const MARKET_DEPTH = 20
@@ -964,9 +1438,24 @@ export const MARKET_DEPTH = 20
 
 Default orderbook depth.
 
+### Other Constants
+```typescript
+export const ADDRESS_LOOKUP_TABLE_PROGRAM_ID: Address<"AddressLookupTab1e1111111111111111111111111">
+export const SYSTEM_PROGRAM_ID: Address<"11111111111111111111111111111111">
+export const TOKEN_PROGRAM_ID: Address<"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA">
+export const TOKEN_2022_PROGRAM_ID: Address<"TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb">
+export const ASSOCIATED_TOKEN_PROGRAM_ID: Address<"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL">
+export const nullOrder = 65535           // Sentinel value for empty order slots
+export let dec: number                   // Current decimal factor
+export let lpDec: number                 // Current LP decimal factor
+export function setDecimals(uiNumbers: boolean): void  // Toggle UI number mode
+```
+
 ---
 
-## AccountType Enum
+## Enums
+
+### AccountType
 
 Enumeration of all account types in the Deriverse protocol. Useful for finding specific accounts.
 
@@ -1008,11 +1497,94 @@ enum AccountType {
 }
 ```
 
+### OrderType
+
+```typescript
+enum OrderType {
+  limit = 0,
+  market = 1,
+  marginCall = 2,
+  forcedClose = 3
+}
+```
+
+### InstrMask
+
+Bitmask flags for instrument capabilities.
+
+```typescript
+enum InstrMask {
+  DRV = 268435456,                  // 0x10000000
+  READY_TO_DRV_UPGRADE = 536870912, // 0x20000000
+  PERP = 1073741824,                // 0x40000000
+  ORACLE = 2147483648,              // 0x80000000
+  READY_TO_PERP_UPGRADE = 16777216  // 0x01000000
+}
+```
+
+**Use Case:** Check instrument capabilities: `if (header.mask & InstrMask.PERP) { /* perps enabled */ }`
+
+---
+
+## Zod Validation Schemas
+
+All argument types have corresponding Zod schemas exported for runtime validation. Import from `@deriverse/kit`:
+
+```typescript
+import { DepositArgsSchema, NewSpotOrderArgsSchema, ... } from '@deriverse/kit';
+
+// Validate input at runtime
+const validated = DepositArgsSchema.parse({ tokenId: 1, amount: 100 });
+```
+
+Available schemas: `EngineArgsSchema`, `InstrIdSchema`, `DepositArgsSchema`, `WithdrawArgsSchema`, `NewSpotOrderArgsSchema`, `SpotQuotesReplaceArgsSchema`, `SwapArgsSchema`, `SpotOrderCancelArgsSchema`, `SpotMassCancelArgsSchema`, `SpotLpArgsSchema`, `PerpDepositArgsSchema`, `PerpBuySeatArgsSchema`, `PerpSellSeatArgsSchema`, `NewPerpOrderArgsSchema`, `PerpQuotesReplaceArgsSchema`, `PerpOrderCancelArgsSchema`, `PerpMassCancelArgsSchema`, `PerpChangeLeverageArgsSchema`, `PerpStatisticsResetArgsSchema`, `PerpForcedCloseArgsSchema`, `NewInstrumentArgsSchema`, `GetInstrIdArgsSchema`, `GetSpotContextArgsSchema`, `GetInstrAccountByTagArgsSchema`, `UpdateInstrDataArgsSchema`, `DistribDividendsArgsSchema`, `GetClientSpotOrdersInfoArgsSchema`, `GetClientPerpOrdersInfoArgsSchema`, `GetClientSpotOrdersArgsSchema`, `GetClientPerpOrdersArgsSchema`.
+
+---
+
+## Instruction Builder Functions
+
+Low-level functions that build raw instruction `Buffer` data. These are used internally by the Engine's instruction methods but are also exported for advanced use:
+
+`newSpotOrderData`, `newPerpOrderData`, `depositData`, `withdrawData`, `perpDepositData`, `perpWithdrawData`, `spotOrderCancelData`, `perpOrderCancelData`, `spotMassCancelData`, `perpMassCancelData`, `spotLpData`, `spotQuotesReplaceData`, `perpQuotesReplaceData`, `perpChangeLeverageData`, `perpStatisticsResetData`, `swapData`, `feesDepositData`, `feesWithdrawData`, `buyMarketSeatData`, `sellMarketSeatData`, `votingData`, `airdropData`, `newOperatorData`, `newRootAccountData`, `newInstrumentData`, `upgradeToPerpData`, `setInstrReadyForPerpUpgradeData`, `changeRefProgramData`, `newPrivateClient`, `pointsProgramExpiration`, `setVarianceData`, `changeDenominatorData`, `newBaseCrncyData`, `perpClientsProcessingData`, `setSeatPurchasingFeeData`, `changeVotingData`, `garbageCollectorData`, `activateClientRefProgramData`, `moveSpotAvailFundsData`.
+
+---
+
+## Additional Structure Models
+
+These models parse raw on-chain account data via `static fromBuffer()`. All exposed from the package root.
+
+| Model | Description |
+|---|---|
+| `RootStateModel` | Protocol root state (operator, holder, token/instr counts, ref program config) |
+| `TokenStateModel` | Token registration (address, programAddress, id, mask) |
+| `InstrAccountHeaderModel` | 140+ fields: prices, volumes, orderbook state, perp data, funding, etc. |
+| `CandleModel` | OHLCV data point |
+| `CandlesAccountHeaderModel` | Header for candle data accounts |
+| `LineQuotesModel` | Orderbook price level (px, qty) |
+| `OrderModel` | Individual order in orderbook |
+| `PxOrdersModel` | Price-level order aggregation (price, qty, linked list pointers) |
+| `CommunityAccountHeaderModel` | Community governance (voting, fee rates, pool ratios) |
+| `ClientCommunityAccountHeaderModel` | Per-client community data (voting, DRVS tokens) |
+| `ClientCommunityRecordModel` | Per-client per-currency community record (dividends, fees, referrals) |
+| `BaseCrncyRecordModel` | Base currency config (rate, denominator, locked DRVS) |
+| `ClientPrimaryAccountHeaderModel` | Full client account (wallet, ref links, trade counts, VM state) |
+| `SpotClientInfoModel` / `SpotClientInfo2Model` | Per-instrument spot client data |
+| `PerpClientInfoModel` / `PerpClientInfo2Model` | Per-instrument perp client data |
+| `PerpClientInfo3Model` | Perp client fees/rebates |
+| `PerpClientInfo4Model` | Perp client socialized loss data |
+| `PerpClientInfo5Model` | Perp client funding data |
+| `HolderAccountHeaderModel` / `OperatorModel` | Protocol operator management |
+| `SpotTradeAccountHeaderModel` / `PerpTradeAccountHeaderModel` | Trade account headers |
+| `ClientSpotModel` / `ClientPerpModel` | Client spot/perp registration |
+| `AssetRecordModel` | Asset record (assetId, tempId, value) |
+| `PrivateClientHeaderModel` / `PrivateClientModel` | Private client registration |
+| `AutoBuffer` / `AutoData` | Internal buffer readers for binary deserialization |
+
 ---
 
 ## Notes
 
-1. **Log Decoding**: The `logsDecode()` method is the primary way to extract trade data from blockchain transactions. It handles all event types automatically.
+1. **Log Decoding**: The `logsDecode()` method is the primary way to extract trade data from blockchain transactions. It handles all 33 event types automatically.
 
 2. **Real-time Updates**: Use `updateInstrDataFromBuffer()` and `updateCommunityFromBuffer()` for real-time updates via Solana account subscriptions.
 
@@ -1023,6 +1595,10 @@ enum AccountType {
 5. **Price Data**: Current market prices are available in `InstrAccountHeaderModel` after calling `updateInstrData()`.
 
 6. **Trade Direction**: In log models, `side: 0` = bid/buy/long, `side: 1` = ask/sell/short.
+
+7. **Input Validation**: All method args have Zod schemas for runtime validation.
+
+8. **InstrMask**: Check instrument capabilities using bitwise AND with `InstrMask` enum values.
 
 ---
 

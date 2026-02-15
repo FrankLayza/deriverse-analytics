@@ -37,3 +37,4 @@ Thumbs.db
 *.tsbuildinfo
 wallet.json
 keys/
+__test__

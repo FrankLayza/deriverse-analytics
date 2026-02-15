@@ -4,6 +4,7 @@
     "paths": {
       "@/*": ["./*"] 
     },
+    "types": ["node", "jest", "@testing-library/jest-dom"],
     "target": "ES2017",
     "lib": [
       "dom",

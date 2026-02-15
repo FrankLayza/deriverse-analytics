@@ -745,19 +745,42 @@ export interface TradeJournalEntry extends Trade {
  * Used for: Trade Journal Table
  */
 export function formatTradesForJournal(trades: Trade[]): TradeJournalEntry[] {
-  return trades.map((trade) => ({
-    ...trade,
-    formattedPrice: `$${toNumber(trade.price).toFixed(2)}`,
-    formattedQuantity: toNumber(trade.quantity).toFixed(4),
-    formattedPnL: `${toNumber(trade.realized_pnl) >= 0 ? "+" : ""}$${toNumber(trade.realized_pnl).toFixed(2)}`,
-    formattedFees: `$${Math.abs(toNumber(trade.fees)).toFixed(6)}`,
-    formattedDate: new Date(trade.block_time).toLocaleString(),
-    pnLClass:
-      toNumber(trade.realized_pnl) > 0
-        ? "profit"
-        : toNumber(trade.realized_pnl) < 0
-          ? "loss"
-          : "neutral",
-    symbol: `Inst #${trade.instrument_id}`,
-  }));
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  return trades.map((trade) => {
+    const date = new Date(trade.block_time);
+    const month = months[date.getMonth()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+
+    // Extract base asset from symbol (e.g., "SOL/USD" → "SOL", "SOL-PERP" → "SOL")
+    const symbol = trade.symbol || `Inst #${trade.instrument_id}`;
+    let baseAsset = symbol;
+    const slashIdx = symbol.indexOf('/');
+    if (slashIdx > 0) baseAsset = symbol.substring(0, slashIdx);
+    else {
+      const dashIdx = symbol.indexOf('-');
+      if (dashIdx > 0) baseAsset = symbol.substring(0, dashIdx);
+    }
+
+    const qty = toNumber(trade.quantity);
+
+    return {
+      ...trade,
+      formattedPrice: `$${toNumber(trade.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      formattedQuantity: toNumber(trade.quantity).toFixed(4),
+      formattedPnL: `${toNumber(trade.realized_pnl) >= 0 ? "+" : ""}$${toNumber(trade.realized_pnl).toFixed(2)}`,
+      formattedFees: `$${Math.abs(toNumber(trade.fees)).toFixed(6)}`,
+      formattedDate: `${month} ${day}, ${hours}:${minutes}:${seconds}`,
+      pnLClass:
+        toNumber(trade.realized_pnl) > 0
+          ? "profit"
+          : toNumber(trade.realized_pnl) < 0
+            ? "loss"
+            : "neutral",
+      symbol,
+    };
+  });
 }

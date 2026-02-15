@@ -30,7 +30,7 @@ export default function Home() {
   const { data, loading, error, refetch, lastSyncTime, isAutoSyncing } =
     useAnalytics(walletAddress, filters, {
       autoSync: true,
-      syncInterval: 5 * 30000,
+      syncInterval: 12 * 30000,
       syncOnMount: true,
     });
 
@@ -66,7 +66,7 @@ export default function Home() {
                 className="cursor-pointer py-4"
                 variant="outline"
                 onClick={() => {
-                  setSessionExpired(false); // Go back to main login screen
+                  setSessionExpired(false); 
                 }}
               >
                 Cancel
@@ -144,7 +144,6 @@ export default function Home() {
   }
   return (
     <div className="min-h-screen bg-background">
-      <div className="absolute inset-0 bg-grid-pattern pointer-events-none z-0" />
       <div className="relative z-10">
         <TopNav onRefresh={refetch} isSyncing={loading} />
         <MotionContainer>

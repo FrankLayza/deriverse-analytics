@@ -144,7 +144,7 @@ export function PerformanceCharts({
             config={{
               pnl: {
                 label: "PnL",
-                color: "hsl(132, 63%, 47%)",
+                color: "hsl(var(--primary))",
               },
               drawdown: {
                 label: "Drawdown",
