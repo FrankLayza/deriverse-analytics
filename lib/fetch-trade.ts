@@ -100,7 +100,7 @@ export async function fetchMyTrades(wallet: string) {
             ) {
               decodedEvents.push(...allDecoded);
               console.log(
-                `   ✅ Successfully decoded ${allDecoded.length} event(s)`,
+                `   ✅ Successfully decoded ${allDecoded.length} event(s)`, 
               );
             } else {
               console.log(
@@ -172,7 +172,7 @@ export async function fetchMyTrades(wallet: string) {
             ) {
               decodedEvents.push(...allDecoded);
               console.log(
-                `✅ Decoded ${allDecoded.length} event(s) from all logs`,
+                `✅ Decoded ${allDecoded.length} event(s) from all logs`, allDecoded
               );
             } else {
               console.log(`⚠️  logsDecode returned empty result`);
@@ -181,6 +181,8 @@ export async function fetchMyTrades(wallet: string) {
             console.log(`⚠️  Could not decode logs: ${decodeErr.message}`);
           }
         }
+        console.log(decodedEvents)
+
 
         // ✅ FIXED: Parse decoded events with correct field mapping
         for (const event of decodedEvents) {
@@ -222,7 +224,7 @@ export async function fetchMyTrades(wallet: string) {
             const orderType = 'MARKET';
             
             // ✅ FIX 3: Instrument ID - might be in event.instrId
-            const instrumentId = event.instrId || event.instrumentId || orderId || clientId || 1;
+            const instrumentId = event.instrId ?? event.instrumentId ?? event.instrument_id ?? 1;
 
             trades.push({
               signature,
@@ -233,10 +235,10 @@ export async function fetchMyTrades(wallet: string) {
               feeRebates: fee, // Keep for compatibility
               orderId,
               clientId,
-              instrumentId,
+              instrumentId : Number(instrumentId),
               tag,
-              marketType,      // ✅ Correctly derived from tag
-              orderType,       // ✅ Defaults to MARKET
+              marketType,    
+              orderType,       //Default, i set it to MARKET
               blockTime: sigInfo.blockTime
                 ? new Date(Number(sigInfo.blockTime) * 1000)
                 : null,

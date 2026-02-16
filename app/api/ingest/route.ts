@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
         block_time: trade.blockTime 
           ? new Date(trade.blockTime).toISOString() 
           : new Date().toISOString(),
-        instrument_id: trade.clientId || 1,
+        instrument_id: trade.instrumentId || 1,
         side: trade.side ? trade.side.toLowerCase() : 'buy',
         order_type: trade.orderType || "market",
-        price: trade.price.toString(),
+        price: trade.price ?? 0,
         quantity: trade.size.toString(),
         quote_amount: (trade.price * trade.size).toString(),
         fees: Math.abs(feeValue).toString(), // Store as positive number

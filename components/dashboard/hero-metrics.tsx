@@ -86,44 +86,43 @@ export function HeroMetrics({ core, longShort }: HeroMetricsProps) {
 
       {/* 3. Win Rate Card */}
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center justify-between">
+        <div className="mt-2 flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Win Rate
           </span>
+          <Target className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="flex items-center justify-between mt-4">
-          <div>
-            <div className="font-mono text-3xl font-bold text-foreground">
-              {core.winRate.toFixed(1)}%
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {core.totalTrades} Trades Total
-            </div>
-          </div>
+        <div className="flex items-center justify-between gap-4 mt-6 px-2">
           <div className="relative h-16 w-16">
             <svg className="h-16 w-16 -rotate-90 transform" viewBox="0 0 64 64">
               <circle
                 cx="32"
                 cy="32"
-                r="26"
+                r="28"
                 fill="none"
-                stroke="hsl(240, 5%, 20%)"
-                strokeWidth="5"
+                stroke="hsl(240, 5%, 32%)"
+                strokeWidth="8"
               />
               <circle
                 cx="32"
                 cy="32"
-                r="26"
+                r="28"
                 fill="none"
-                stroke="hsl(263, 70%, 55%)"
-                strokeWidth="5"
-                strokeDasharray={`${26 * 2 * Math.PI * winRateValue} ${26 * 2 * Math.PI}`}
+                stroke="hsl(132, 63%, 47%)"
+                strokeWidth="8"
+                strokeDasharray={`${28 * 2 * Math.PI * winRateValue} ${28 * 2 * Math.PI}`}
                 strokeLinecap="round"
                 className="transition-all duration-1000 ease-out"
               />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-              W/L
+            <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">
+              {core.winRate.toFixed(0)}%
+            </div>
+          </div>
+          <div className="flex justify-between flex-col gap-2">
+            <div className="text-xs text-muted-foreground">Total Trades</div>
+            <div className="font-mono text-4xl font-bold text-foreground">
+              {core.totalTrades}
             </div>
           </div>
         </div>

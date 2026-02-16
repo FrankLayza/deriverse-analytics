@@ -169,7 +169,7 @@ export function TradeJournal({ trades }: TradeJournalProps) {
                     </td>
 
                     {/* MARKET TYPE */}
-                    <td className="px-4 py-4 text-right text-xs text-muted-foreground">
+                    <td className="px-4 py-4 text-right text-xs font-bold text-muted-foreground uppercase">
                       {trade.market_type || 'unknown'}
                     </td>
                   </tr>

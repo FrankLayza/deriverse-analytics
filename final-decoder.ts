@@ -75,7 +75,7 @@ function decodeFillOrderReport(base64Data: string, logType: number): any {
     const QTY_DECIMALS = 1_000_000_000; // 10^9 for quantity
     const price = Math.abs(Number(priceRaw)) / PRICE_DECIMALS;
     const quantity = Math.abs(Number(qtyRaw)) / QTY_DECIMALS;
-    console.log(priceRaw);
+    // console.log(priceRaw);
     return {
       logType,
       flags,

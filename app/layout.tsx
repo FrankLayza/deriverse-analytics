@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Providers } from '@/components/providers'  
+import { ClientProvider } from '@/components/ClientProvider'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 
@@ -27,7 +28,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
         <Providers>
-          {children}
+            {children}
         </Providers>
       </body>
     </html>
