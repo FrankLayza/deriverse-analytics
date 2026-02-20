@@ -93,14 +93,14 @@ export async function POST(request: NextRequest) {
         market_type: marketType, // Correctly set based on tag
       };
 
-      console.log(`  📝 Mapping trade:`, {
-        signature: trade.signature.substring(0, 16) + "...",
-        side: mappedTrade.side,
-        type: marketType,
-        price: mappedTrade.price,
-        size: mappedTrade.quantity,
-        fee: mappedTrade.fees,
-      });
+      // console.log(`  📝 Mapping trade:`, {
+      //   signature: trade.signature.substring(0, 16) + "...",
+      //   side: mappedTrade.side,
+      //   type: marketType,
+      //   price: mappedTrade.price,
+      //   size: mappedTrade.quantity,
+      //   fee: mappedTrade.fees,
+      // });
 
       return mappedTrade;
     });

@@ -5,7 +5,8 @@ import { rpc, deriverseEngine } from "./deriverse";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function fetchMyTrades(wallet: string) {
-  const programId = process.env.PROGRAM_ID || "Drvrseg8AQLP8B96DBGmHRjFGviFNYTkHueY9g3k27Gu";
+  const programId =
+    process.env.PROGRAM_ID || "Drvrseg8AQLP8B96DBGmHRjFGviFNYTkHueY9g3k27Gu";
 
   try {
     let signaturesResponse: any;
@@ -34,7 +35,9 @@ export async function fetchMyTrades(wallet: string) {
       return [];
     }
 
-    const successfulSignatures = signatures.filter((sig: any) => sig.err === null);
+    const successfulSignatures = signatures.filter(
+      (sig: any) => sig.err === null,
+    );
     const trades: any[] = [];
 
     // 2. Loop through ALL successful signatures (Removed the limit of 10)
@@ -60,27 +63,37 @@ export async function fetchMyTrades(wallet: string) {
 
         // 3. Attempt Standard Decoding
         try {
-          const allDecoded = await (deriverseEngine as any).logsDecode(logMessages);
-          if (allDecoded && Array.isArray(allDecoded) && allDecoded.length > 0) {
+          const allDecoded = await (deriverseEngine as any).logsDecode(
+            logMessages,
+          );
+          if (
+            allDecoded &&
+            Array.isArray(allDecoded) &&
+            allDecoded.length > 0
+          ) {
             decodedEvents.push(...allDecoded);
           }
         } catch (e) {
-            // Silent fail on bulk decode, fallback to manual parsing below
+          // Silent fail on bulk decode, fallback to manual parsing below
         }
 
         // 4. Fallback: Manual "Program data" parsing if standard decode failed
         if (decodedEvents.length === 0) {
-            const programDataLogs = logMessages
-                .filter((l: string) => l.includes("Program data:"))
-                .map((l: string) => l.match(/Program data:\s*([A-Za-z0-9+/=]+)/i)?.[1])
-                .filter(Boolean);
+          const programDataLogs = logMessages
+            .filter((l: string) => l.includes("Program data:"))
+            .map(
+              (l: string) => l.match(/Program data:\s*([A-Za-z0-9+/=]+)/i)?.[1],
+            )
+            .filter(Boolean);
 
-            for (const base64Data of programDataLogs) {
-                try {
-                    const decoded = await (deriverseEngine as any).logsDecode([`Program data: ${base64Data}`]);
-                    if (decoded && decoded.length > 0) decodedEvents.push(...decoded);
-                } catch {}
-            }
+          for (const base64Data of programDataLogs) {
+            try {
+              const decoded = await (deriverseEngine as any).logsDecode([
+                `Program data: ${base64Data}`,
+              ]);
+              if (decoded && decoded.length > 0) decodedEvents.push(...decoded);
+            } catch {}
+          }
         }
 
         // 5. Map Events to Trades
@@ -94,15 +107,20 @@ export async function fetchMyTrades(wallet: string) {
 
           if (isTradeEvent) {
             // Standardize Fields
-            const side = event.side === 0 ? "BUY" : event.side === 1 ? "SELL" : "UNKNOWN";
+            const side =
+              event.side === 0 ? "BUY" : event.side === 1 ? "SELL" : "UNKNOWN";
             const price = event.price ? Number(event.price) : null;
-            const size = event.qty || event.perps ? Number(event.qty || event.perps) / 1e9 : null;
+            const size =
+              event.qty || event.perps
+                ? Number(event.qty || event.perps) / 1e9
+                : null;
             const fee = event.rebates ? -Number(event.rebates) / 1e9 : null;
-            
+
             // Critical ID Fixes
-            const marketType = event.tag === 19 ? 'PERP' : 'SPOT';
+            const marketType = event.tag === 19 ? "PERP" : "SPOT";
             // Use ?? to allow ID 0 (SOL) to pass through
-            const instrumentId = event.instrId ?? event.instrumentId ?? event.instrument_id ?? 1;
+            const instrumentId =
+              event.instrId ?? event.instrumentId ?? event.instrument_id ?? 1;
 
             trades.push({
               signature,
@@ -116,7 +134,7 @@ export async function fetchMyTrades(wallet: string) {
               instrumentId: Number(instrumentId),
               tag: event.tag,
               marketType,
-              orderType: 'MARKET',
+              orderType: "MARKET",
               blockTime: sigInfo.blockTime
                 ? new Date(Number(sigInfo.blockTime) * 1000)
                 : null,
@@ -146,8 +164,8 @@ export async function fetchMyTrades(wallet: string) {
                 price: priceMatch ? parseFloat(priceMatch[1]) : 0,
                 size: sizeMatch ? parseFloat(sizeMatch[1]) : 0,
                 fee: feeMatch ? parseFloat(feeMatch[1]) : 0,
-                marketType: 'UNKNOWN',
-                orderType: 'MARKET',
+                marketType: "UNKNOWN",
+                orderType: "MARKET",
                 instrumentId: 1, // Default to SOL if unknown
                 blockTime: sigInfo.blockTime
                   ? new Date(Number(sigInfo.blockTime) * 1000)
@@ -158,13 +176,12 @@ export async function fetchMyTrades(wallet: string) {
             }
           }
         }
-
       } catch (err: any) {
         // Skip individual failed transactions without crashing the loop
         continue;
       }
     }
-    
+
     return trades;
   } catch (err: any) {
     console.error("❌ Fatal Error fetching trades:", err.message);
@@ -172,9 +189,8 @@ export async function fetchMyTrades(wallet: string) {
   }
 }
 
-// Only run if called directly (not imported)
 if (require.main === module) {
-  const testWallet = "FK4ugTURYRR2hbSDZr1Q1kqU4xX4UQP7o28cr3wUpG2q";
+  const testWallet = process.env.TEST_WALLET;
   console.log(`Running fetch for ${testWallet}...`);
-  fetchMyTrades(testWallet).then(t => console.table(t));
+  fetchMyTrades(testWallet).then((t) => console.table(t));
 }

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/utils/supabase';
 import type { Trade } from '@/utils/supabase';
 import {
-  enrichTradesWithPnL, // 👈 Imported the enrichment function
+  enrichTradesWithPnL, 
   calculateCoreMetrics,
   calculateLongShortRatio,
   calculateRiskMetrics,
