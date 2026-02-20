@@ -76,7 +76,7 @@ export default function Home() {
             </p>
             <div className="flex gap-3 justify-center">
               <Button
-                className="cursor-pointer py-4"
+                className="cursor-pointer py-4 bg-red-500 hover:bg-red-600"
                 variant="outline"
                 onClick={() => setSessionExpired(false)}
               >

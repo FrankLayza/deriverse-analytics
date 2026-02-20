@@ -78,6 +78,7 @@ export function useDashboard(wallet: string) {
     loading: isReading,
     isSyncing: isSyncing,
     error: readError || syncError,
-    refetch: () => refetch(), // Optional: manual re-fetch
+    sync: () => sync(), // Trigger a full sync (fetch from chain + insert)
+    refetch: () => refetch(), // Optional: manual re-fetch (read from DB only)
   };
 }
