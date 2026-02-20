@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
       `✅ Rate limit OK for ${rateLimitKey} (${rateLimitResult.remaining} requests remaining)`,
     );
 
-    console.log("🔄 Starting ingestion for wallet:", wallet);
     const parsedTrades = await fetchMyTrades(wallet);
 
     if (!parsedTrades || parsedTrades.length === 0) {
@@ -105,8 +104,6 @@ export async function POST(request: NextRequest) {
       return mappedTrade;
     });
 
-    console.log("💾 Inserting trades into Supabase...");
-
     const { data, error } = await supabase
       .from("trades")
       .upsert(tradesToInsert, {
@@ -116,7 +113,6 @@ export async function POST(request: NextRequest) {
       .select();
 
     if (error) {
-      console.error("❌ Supabase Insert Error:", error);
       throw error;
     }
 

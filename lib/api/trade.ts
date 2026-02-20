@@ -1,8 +1,8 @@
-import { supabase } from "@/utils/supabase";
+import { supabase, type Trade } from "@/utils/supabase";
 
 // 1. READ: Fetches raw trades from Supabase
 // Corresponds to 'getTodos'
-export async function getTrades(wallet: string) {
+export async function getTrades(wallet: string): Promise<Trade[]> {
   const { data, error } = await supabase
     .from("trades")
     .select("*")
@@ -10,7 +10,7 @@ export async function getTrades(wallet: string) {
     .order("block_time", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data || [];
+  return (data as Trade[]) || [];
 }
 
 // 2. WRITE: Calls your /api/ingest route

@@ -78,7 +78,6 @@ export function useDashboard(wallet: string) {
     loading: isReading,
     isSyncing: isSyncing,
     error: readError || syncError,
-    sync: () => sync(), // Call this on button click
     refetch: () => refetch(), // Optional: manual re-fetch
   };
 }
