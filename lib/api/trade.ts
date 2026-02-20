@@ -24,8 +24,17 @@ export async function triggerSync(wallet: string) {
 
   if (!response.ok) {
     const error = await response.json();
+
+    // Handle rate limiting (429)
+    if (response.status === 429) {
+      throw new Error(
+        error.message ||
+          `Too many sync requests. Please wait a few moments and try again.`,
+      );
+    }
+
     throw new Error(error.message || "Sync failed");
   }
-  
-  return response.json(); 
+
+  return response.json();
 }
